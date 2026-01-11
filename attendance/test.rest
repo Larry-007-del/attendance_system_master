@@ -1,0 +1,5 @@
+GET http://127.0.0.1:8000/api
+
+Content-Type: application/json
+
+Authorization: Token d52f518c620e888362966c81fe4d2fc13db7aa49
