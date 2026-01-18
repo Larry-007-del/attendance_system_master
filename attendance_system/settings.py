@@ -27,7 +27,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-+76jshpcgfuy%+((^n5
 DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 # Allowed hosts
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS]
 
 # Application definition
@@ -154,6 +154,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Localhost for development (adjust port as needed)
     "http://127.0.0.1:3000",  # Localhost IP for development (adjust port as needed)
     "http://localhost:8000",  # If using another local environment
+    "http://127.0.0.1:8000",  # Local development API access
+    "http://0.0.0.0:8000",  # All interfaces development
 ]
 
 # Security settings for production

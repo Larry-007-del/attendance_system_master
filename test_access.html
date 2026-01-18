@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System - Access Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .status {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            color: #2e7d32;
+            font-weight: 500;
+        }
+        
+        .links-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .link-card {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+        
+        .link-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .link-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .icon {
+            margin-right: 8px;
+            font-size: 1.3em;
+        }
+        
+        .link-card p {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .link-card a {
+            display: inline-block;
+            margin-top: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: border 0.2s;
+        }
+        
+        .link-card a:hover {
+            border-bottom-color: #667eea;
+        }
+        
+        .system-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #666;
+            border-left: 4px solid #667eea;
+        }
+        
+        .system-info h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .info-item {
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .info-value {
+            color: #667eea;
+            margin-top: 5px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        
+        .check-icon {
+            color: #4caf50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Attendance System</h1>
+        <p class="subtitle">Development Server Access Hub</p>
+        
+        <div class="status">
+            <span class="check-icon">✓</span> Development server is running and ready!
+        </div>
+        
+        <div class="links-section">
+            <div class="link-card">
+                <h3><span class="icon">📚</span>Interactive API (Swagger)</h3>
+                <p>Explore and test all API endpoints with full documentation and request/response examples.</p>
+                <a href="http://127.0.0.1:8000/swagger/" target="_blank">Open Swagger UI →</a>
+            </div>
+            
+            <div class="link-card">
+                <h3><span class="icon">📖</span>Alternative Docs (ReDoc)</h3>
+                <p>Beautiful, alternative API documentation viewer for exploring endpoints.</p>
+                <a href="http://127.0.0.1:8000/redoc/" target="_blank">Open ReDoc →</a>
+            </div>
+            
+            <div class="link-card">
+                <h3><span class="icon">⚙️</span>Admin Panel</h3>
+                <p>Manage system data, users, courses, and attendance records directly.</p>
+                <a href="http://127.0.0.1:8000/admin/" target="_blank">Go to Admin →</a>
+            </div>
+            
+            <div class="link-card">
+                <h3><span class="icon">💾</span>Raw API Root</h3>
+                <p>Access the raw API endpoints and browse the service root.</p>
+                <a href="http://127.0.0.1:8000/api/" target="_blank">View API Root →</a>
+            </div>
+            
+            <div class="link-card">
+                <h3><span class="icon">📋</span>Quick Reference</h3>
+                <p>Read the quick deployment and API reference guide.</p>
+                <a href="#" onclick="alert('Open QUICK_REFERENCE.md in your editor'); return false;">View Guide →</a>
+            </div>
+            
+            <div class="link-card">
+                <h3><span class="icon">🚀</span>Deployment Guide</h3>
+                <p>Complete step-by-step guide for deploying to production.</p>
+                <a href="#" onclick="alert('Open DEPLOYMENT_GUIDE.md in your editor'); return false;">Read Guide →</a>
+            </div>
+        </div>
+        
+        <div class="system-info">
+            <h4>System Information</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Server Address</div>
+                    <div class="info-value">127.0.0.1:8000</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Framework</div>
+                    <div class="info-value">Django 5.0.7</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">API Version</div>
+                    <div class="info-value">REST Framework 3.15.2</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Database</div>
+                    <div class="info-value">SQLite3</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Python Version</div>
+                    <div class="info-value">3.12.7</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Mode</div>
+                    <div class="info-value">Development (HTTP)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
