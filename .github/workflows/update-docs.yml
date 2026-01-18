@@ -1,0 +1,43 @@
+name: Update Documentation Index
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.md'
+      - '.github/workflows/update-docs.yml'
+  pull_request:
+    paths:
+      - '**.md'
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Run documentation index generator
+        run: python update_docs_index.py
+      
+      - name: Commit changes if needed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet DOCUMENTATION_INDEX.md; then
+            echo "Documentation index is up to date"
+          else
+            echo "Documentation index was updated"
+            git add DOCUMENTATION_INDEX.md
+            git commit -m "docs: auto-update DOCUMENTATION_INDEX.md"
+            git push
+          fi

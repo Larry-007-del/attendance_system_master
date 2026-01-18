@@ -93,6 +93,20 @@ class Attendance(models.Model):
     def is_open(self):
         return self.is_active and (self.ended_at is None or self.ended_at > timezone.now())
 
+    def is_within_radius(self, student_latitude, student_longitude, radius_km=0.1):
+        """
+        Check if the student's location is within the specified radius from the lecturer's location.
+        Default radius is 0.1 km (100 meters).
+        """
+        if self.lecturer_latitude is None or self.lecturer_longitude is None:
+            return False
+        
+        lecturer_coords = (float(self.lecturer_latitude), float(self.lecturer_longitude))
+        student_coords = (student_latitude, student_longitude)
+        
+        distance = geodesic(lecturer_coords, student_coords).km
+        return distance <= radius_km
+
 class AttendanceToken(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     token = models.CharField(max_length=6, unique=True)

@@ -21,17 +21,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+76jshpcgfuy%+((^n57ev)t6du*qxo5z0@d_nxt$(wc@)s*2*'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-+76jshpcgfuy%+((^n57ev)t6du*qxo5z0@d_nxt$(wc@)s*2*')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 # Allowed hosts
-ALLOWED_HOSTS = [
-    'attendance-system-6a30.onrender.com',  # Your deployment host
-    'localhost',
-    '127.0.0.1'
-]
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS]
 
 # Application definition
 
@@ -130,7 +127,7 @@ REST_FRAMEWORK = {
 }
 
 # GIS and other settings
-GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH', 'C:\\GDAL\\bin\\gdal304.dll')
+GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH', None)
 
 AUTHENTICATION_BACKENDS = (
     'attendance.authentication_backends.StudentBackend',
@@ -158,3 +155,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",  # Localhost IP for development (adjust port as needed)
     "http://localhost:8000",  # If using another local environment
 ]
+
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_SECURITY_POLICY = {
+        'default-src': ("'self'",),
+    }
