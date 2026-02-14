@@ -164,6 +164,9 @@ CORS_ALLOWED_ORIGINS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# HTMX settings
+HTMX_ENABLED = True
+HTMX_URLS = ['/admin/', '/api/']
 
 # Login URLs
 LOGIN_URL = 'login'
