@@ -5,6 +5,12 @@ from geopy.distance import geodesic
 from datetime import timedelta
 from django.utils import timezone
 
+
+class ActiveCourseManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_active=True)
+
+
 class Lecturer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     staff_id = models.CharField(max_length=10, unique=True)
