@@ -621,6 +621,57 @@ def attendance_detail(request, pk):
 
 
 @login_required
+def export_attendance_csv(request, attendance_id):
+    """Export attendance as CSV"""
+    attendance = get_object_or_404(Attendance, id=attendance_id)
+    
+    # Security check - only lecturer can export
+    if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
+        return HttpResponse("Unauthorized", status=403)
+
+    # Create the CSV response
+    filename = f"attendance_{attendance.course.course_code}_{attendance.date}.csv"
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Student ID', 'Full Name', 'Programme', 'Status', 'Date'])
+
+    # Fetch all enrolled students
+    enrolled_students = attendance.course.students.all()
+    present_ids = attendance.present_students.values_list('id', flat=True)
+
+    for student in enrolled_students:
+        status = 'Present' if student.id in present_ids else 'Absent'
+        writer.writerow([
+            student.student_id, 
+            student.name, 
+            student.programme_of_study, 
+            status, 
+            attendance.date
+        ])
+
+    return response
+
+
+@login_required
+def manual_mark_present(request, attendance_id, student_id):
+    """Manually mark a student as present"""
+    attendance = get_object_or_404(Attendance, id=attendance_id)
+    
+    # Security check
+    if attendance.course.lecturer != request.user.lecturer:
+        return HttpResponse("Unauthorized", status=403)
+        
+    student = get_object_or_404(Student, id=student_id)
+    
+    # Add to ManyToMany field
+    attendance.present_students.add(student)
+    
+    return redirect('attendance_detail', pk=attendance_id)
+
+
+@login_required
 def attendance_history(request):
     """View attendance history"""
     course_filter = request.GET.get('course')

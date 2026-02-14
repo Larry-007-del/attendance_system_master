@@ -93,6 +93,16 @@ class Attendance(models.Model):
     def is_open(self):
         return self.is_active and (self.ended_at is None or self.ended_at > timezone.now())
 
+    @property
+    def is_session_valid(self):
+        """Returns True only if the session is active AND created less than 4 hours ago"""
+        if not self.is_active:
+            return False
+        
+        # Hard limit: 4 hours (adjust as needed)
+        time_limit = self.created_at + timedelta(hours=4)
+        return timezone.now() < time_limit
+
     def is_within_radius(self, student_lat, student_lon, radius_meters=50):
         """Check if student is within radius of lecturer's location"""
         if not self.lecturer_latitude or not self.lecturer_longitude:

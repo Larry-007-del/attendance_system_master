@@ -279,6 +279,12 @@ class SubmitLocationView(generics.GenericAPIView):
 
         attendance = Attendance.objects.filter(course=token.course, date=timezone.now().date()).first()
 
+        if not attendance or not attendance.is_session_valid:
+            return Response(
+                {"error": "This attendance session has expired."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if attendance and attendance.is_within_radius(float(latitude), float(longitude)):
             user = request.user
             if hasattr(user, 'student'):
