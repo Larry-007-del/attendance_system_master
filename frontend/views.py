@@ -59,7 +59,11 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    """Main dashboard view"""
+    # Fix: Redirect Superusers to the backend Admin panel
+    if request.user.is_superuser:
+        return redirect('/admin/')
+        
+    # ... rest of your existing logic for Students/Lecturers ...
     context = {
         'total_lecturers': Lecturer.objects.count(),
         'total_students': Student.objects.count(),
