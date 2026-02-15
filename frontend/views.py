@@ -54,6 +54,8 @@ def dashboard(request):
         'today': timezone.now().date(),
         'today_attendance': Attendance.objects.filter(date=timezone.now().date()).count(),
         'recent_attendances': Attendance.objects.order_by('-created_at')[:5],
+        'is_student': hasattr(request.user, 'student'),
+        'is_lecturer': hasattr(request.user, 'lecturer'),
     }
     return render(request, 'dashboard.html', context)
 

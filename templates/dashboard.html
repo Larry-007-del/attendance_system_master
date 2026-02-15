@@ -3,25 +3,32 @@
 {% block content %}
 <div class="mb-6">
     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-    <p class="text-gray-500">Welcome back, {{ user.first_name }}!</p>
+    <p class="text-gray-500">Welcome back, {{ user.first_name|default:user.username }}!</p>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
     <div class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-        <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">85%</h5>
+        <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            {% if is_student %}
+                N/A
+            {% else %}
+                --
+            {% endif %}
+        </h5>
         <p class="font-normal text-gray-700 dark:text-gray-400">Attendance Rate</p>
     </div>
     
     <div class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-        <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">CS 301</h5>
-        <p class="font-normal text-gray-700 dark:text-gray-400">Next Class (10:00 AM)</p>
+        <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">--</h5>
+        <p class="font-normal text-gray-700 dark:text-gray-400">Next Class</p>
     </div>
     
     <div class="p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
         <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            {% if user.is_superuser %} Admin
-            {% elif user.lecturer %} Lecturer
-            {% else %} Student {% endif %}
+            {% if user.is_superuser %} Administrator
+            {% elif is_lecturer %} Lecturer
+            {% elif is_student %} Student
+            {% else %} User {% endif %}
         </h5>
         <p class="font-normal text-gray-700 dark:text-gray-400">Current Role</p>
     </div>
@@ -33,34 +40,10 @@
         <a href="{% url 'frontend:checkin' %}" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
             Check In Now
         </a>
-        <a href="{% url 'frontend:attendance_history' %}" class="px-5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+        
+        <button class="px-5 py-2.5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
             View History
-        </a>
+        </button>
     </div>
-</div>
-
-<div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-                <th scope="col" class="px-6 py-3">Course Code</th>
-                <th scope="col" class="px-6 py-3">Date</th>
-                <th scope="col" class="px-6 py-3">Status</th>
-                <th scope="col" class="px-6 py-3">Time</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                    INFO 402
-                </th>
-                <td class="px-6 py-4">Feb 15, 2026</td>
-                <td class="px-6 py-4">
-                    <span class="bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300">Present</span>
-                </td>
-                <td class="px-6 py-4">08:05 AM</td>
-            </tr>
-            </tbody>
-    </table>
 </div>
 {% endblock %}
