@@ -45,19 +45,26 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    # All users see the same dashboard
     context = {
-        'total_lecturers': Lecturer.objects.count(),
-        'total_students': Student.objects.count(),
-        'total_courses': Course.objects.count(),
-        'active_courses': Course.objects.filter(is_active=True).count(),
-        'today': timezone.now().date(),
-        'today_attendance': Attendance.objects.filter(date=timezone.now().date()).count(),
-        'recent_attendances': Attendance.objects.order_by('-created_at')[:5],
-        'is_student': hasattr(request.user, 'student'),
-        'is_lecturer': hasattr(request.user, 'lecturer'),
+        'is_student': False,
+        'is_lecturer': False,
         'is_admin': request.user.is_superuser,
+        'attendance_rate': 0,
+        'next_class': "No Classes"
     }
+
+    # Safe checks using Python logic
+    if hasattr(request.user, 'student'):
+        context['is_student'] = True
+        try:
+            # Try to get rate, fallback to 0 if it fails (e.g., DivisionByZero)
+            context['attendance_rate'] = request.user.student.attendance_rate
+        except:
+            context['attendance_rate'] = 0
+            
+    elif hasattr(request.user, 'lecturer'):
+        context['is_lecturer'] = True
+
     return render(request, 'dashboard.html', context)
 
 

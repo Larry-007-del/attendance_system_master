@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -31,7 +32,10 @@ urlpatterns = [
     # 3. Your Frontend (Move to root, so it becomes /login/, /dashboard/)
     path('', include('frontend.urls')),
     
-    # 4. Swagger Docs
+    # 4. Auth URLs
+    path('logout/', auth_views.LogoutView.as_view(next_page='/login/'), name='logout'),
+    
+    # 5. Swagger Docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
