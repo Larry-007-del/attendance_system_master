@@ -133,6 +133,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Fix for WhiteNoise - Ignore missing files in CSS (prevents Jazzmin error)
+WHITENOISE_MANIFEST_STRICT = False
+
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
