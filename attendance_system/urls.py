@@ -30,8 +30,8 @@ urlpatterns = [
     path('', include('frontend.urls')),
     
     # 3. Auth URLs - REQUIRED FOR DASHBOARD TO LOAD
-    path('login/', auth_views.LoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='frontend:login'), name='logout'),
+    path('login/', auth_views.LoginView.as_view(template_name='frontend/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     
     # 4. API
     path('api/', include('attendance.urls')),

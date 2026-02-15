@@ -45,34 +45,39 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    # 1. Default safe values
+    # 1. Setup safe default values (so the page never crashes on missing data)
     context = {
+        'role_label': 'User',
+        'attendance_rate': 0,
+        'next_class': 'No classes scheduled',
         'is_student': False,
         'is_lecturer': False,
         'is_admin': request.user.is_superuser,
-        'attendance_rate': 0,
-        'next_class': "No Classes",
-        'role_label': "User"
     }
 
-    # 2. Check for Student Profile safely
-    if hasattr(request.user, 'student'):
-        context['is_student'] = True
-        context['role_label'] = "Student"
-        try:
-            # Handle potential math errors if logic exists in model property
-            context['attendance_rate'] = request.user.student.attendance_rate
-        except Exception:
-            context['attendance_rate'] = 0
-            
-    # 3. Check for Lecturer Profile safely
-    elif hasattr(request.user, 'lecturer'):
-        context['is_lecturer'] = True
-        context['role_label'] = "Lecturer"
-    
-    # 4. Check for Admin
-    elif request.user.is_superuser:
-        context['role_label'] = "Administrator"
+    # 2. Try to get Student data (Safely)
+    try:
+        # Check if 'student' attribute exists and is not None
+        if hasattr(request.user, 'student') and request.user.student:
+            context['is_student'] = True
+            context['role_label'] = 'Student'
+            # Try to get rate, default to 0 if it fails
+            context['attendance_rate'] = getattr(request.user.student, 'attendance_rate', 0)
+    except Exception:
+        # If ANYTHING goes wrong (db error, math error), just keep defaults
+        pass
+
+    # 3. Try to get Lecturer data (Safely)
+    try:
+        if hasattr(request.user, 'lecturer') and request.user.lecturer:
+            context['is_lecturer'] = True
+            context['role_label'] = 'Lecturer'
+    except Exception:
+        pass
+
+    # 4. Override label for Admin
+    if request.user.is_superuser:
+        context['role_label'] = 'Administrator'
 
     return render(request, 'dashboard.html', context)
 
