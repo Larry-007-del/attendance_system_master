@@ -23,17 +23,18 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # 1. The Real Django Admin (Restore this!)
+    # 1. The Real Django Admin
     path('admin/', admin.site.urls),
 
-    # 2. Your API
-    path('api/', include('attendance.urls')),
-
-    # 3. Your Frontend (Move to root, so it becomes /login/, /dashboard/)
+    # 2. Your Frontend
     path('', include('frontend.urls')),
     
-    # 4. Auth URLs
-    path('logout/', auth_views.LogoutView.as_view(next_page='/login/'), name='logout'),
+    # 3. Auth URLs - REQUIRED FOR DASHBOARD TO LOAD
+    path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='frontend:login'), name='logout'),
+    
+    # 4. API
+    path('api/', include('attendance.urls')),
     
     # 5. Swagger Docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

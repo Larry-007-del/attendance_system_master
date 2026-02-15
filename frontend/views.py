@@ -45,25 +45,34 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
+    # 1. Default safe values
     context = {
         'is_student': False,
         'is_lecturer': False,
         'is_admin': request.user.is_superuser,
         'attendance_rate': 0,
-        'next_class': "No Classes"
+        'next_class': "No Classes",
+        'role_label': "User"
     }
 
-    # Safe checks using Python logic
+    # 2. Check for Student Profile safely
     if hasattr(request.user, 'student'):
         context['is_student'] = True
+        context['role_label'] = "Student"
         try:
-            # Try to get rate, fallback to 0 if it fails (e.g., DivisionByZero)
+            # Handle potential math errors if logic exists in model property
             context['attendance_rate'] = request.user.student.attendance_rate
-        except:
+        except Exception:
             context['attendance_rate'] = 0
             
+    # 3. Check for Lecturer Profile safely
     elif hasattr(request.user, 'lecturer'):
         context['is_lecturer'] = True
+        context['role_label'] = "Lecturer"
+    
+    # 4. Check for Admin
+    elif request.user.is_superuser:
+        context['role_label'] = "Administrator"
 
     return render(request, 'dashboard.html', context)
 
