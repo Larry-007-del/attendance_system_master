@@ -1,0 +1,44 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[60vh]">
+    
+    <div class="text-center mb-10">
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Mark Attendance</h2>
+        <p class="text-gray-500 mt-2">Ensure you are within the classroom geofence.</p>
+    </div>
+
+    <div class="relative group cursor-pointer">
+        <form method="post" id="attendance-form">
+            {% csrf_token %}
+            <button type="submit" class="relative flex items-center justify-center w-48 h-48 bg-blue-600 rounded-full shadow-lg transition-transform transform group-hover:scale-105 active:scale-95 focus:outline-none">
+                
+                <span class="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75 animate-ping"></span>
+                
+                <div class="relative z-10 text-white flex flex-col items-center">
+                    <svg class="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="font-bold text-lg">CHECK IN</span>
+                </div>
+            </button>
+        </form>
+    </div>
+
+    <div class="mt-10 flex items-center space-x-2 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+        </span>
+        <span class="text-sm font-medium">GPS Signal: Strong (Accuracy: 5m)</span>
+    </div>
+
+</div>
+
+<script>
+    const form = document.getElementById('attendance-form');
+    form.addEventListener('submit', (e) => {
+        // You can add a "Loading..." text change here to make it feel responsive
+        const btnText = document.querySelector('button span.font-bold');
+        btnText.innerText = "LOCATING...";
+    });
+</script>
+{% endblock %}

@@ -58,6 +58,12 @@ def dashboard(request):
     return render(request, 'dashboard.html', context)
 
 
+@login_required
+def checkin_view(request):
+    """Check-in page with GPS pulsing button"""
+    return render(request, 'frontend/checkin.html')
+
+
 def ajax_dashboard_stats(request):
     """HTMX endpoint for dashboard statistics"""
     stats = {

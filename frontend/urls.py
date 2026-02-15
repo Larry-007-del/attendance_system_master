@@ -39,6 +39,7 @@ urlpatterns = [
     
     # Attendance
     path('attendance/', views.attendance_index, name='attendance_index'),
+    path('attendance/checkin/', views.checkin_view, name='checkin'),
     path('attendance/take/', views.attendance_take, name='attendance_take'),
     path('attendance/history/', views.attendance_history, name='attendance_history'),
     path('attendance/mark/', views.attendance_mark, name='attendance_mark'),
