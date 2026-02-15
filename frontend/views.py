@@ -56,6 +56,7 @@ def dashboard(request):
         'recent_attendances': Attendance.objects.order_by('-created_at')[:5],
         'is_student': hasattr(request.user, 'student'),
         'is_lecturer': hasattr(request.user, 'lecturer'),
+        'is_admin': request.user.is_superuser,
     }
     return render(request, 'dashboard.html', context)
 
