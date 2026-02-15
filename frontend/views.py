@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.db.models import Count, Q
 from django.db import transaction
+from django.urls import reverse
 from datetime import timedelta
 import csv
 import io
@@ -20,7 +21,7 @@ from .forms import LecturerForm, StudentForm, CourseForm, StudentUploadForm
 # ==================== Authentication ====================
 
 def login_view(request):
-    """HTMX-powered login view"""
+    """Login view with proper HTMX redirect handling"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -29,19 +30,23 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
+            
+            # Handle HTMX redirect properly
+            if request.headers.get('HX-Request'):
+                response = HttpResponse()
+                response['HX-Redirect'] = reverse('frontend:dashboard')
+                return response
+            
             # Redirect lecturers and students to dashboard
             if hasattr(user, 'lecturer'):
                 return redirect('frontend:dashboard')
             elif hasattr(user, 'student'):
                 return redirect('frontend:dashboard')
+            
             # Default redirect
             next_url = request.GET.get('next', '/dashboard/')
-            if request.headers.get('HX-Request'):
-                return render(request, 'partials/login-success.html', {'next': next_url})
             return redirect(next_url)
         else:
-            if request.headers.get('HX-Request'):
-                return render(request, 'partials/login-error.html', {'error': 'Invalid username or password'})
             messages.error(request, 'Invalid username or password')
     
     return render(request, 'registration/login.html')
