@@ -16,6 +16,11 @@ from openpyxl import Workbook
 from attendance.models import Lecturer, Student, Course, Attendance, AttendanceToken, CourseEnrollment
 from django.contrib.auth.models import User
 from .forms import LecturerForm, StudentForm, CourseForm, StudentUploadForm
+
+
+# ==================== Authentication ====================
+
+def login_view(request):
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
