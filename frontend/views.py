@@ -29,9 +29,6 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-            # Redirect admins/superusers to Django admin
-            if user.is_superuser or user.is_staff:
-                return redirect('/admin/')
             # Redirect lecturers and students to dashboard
             if hasattr(user, 'lecturer'):
                 return redirect('dashboard')
@@ -60,11 +57,7 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    # Fix: Redirect Superusers to the backend Admin panel
-    if request.user.is_superuser:
-        return redirect('/admin/')
-        
-    # ... rest of your existing logic for Students/Lecturers ...
+    # All users see the same dashboard
     context = {
         'total_lecturers': Lecturer.objects.count(),
         'total_students': Student.objects.count(),

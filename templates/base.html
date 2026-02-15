@@ -3,251 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Attendance System{% endblock %}</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Exodus Attendance</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
     
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <!-- Custom Styles -->
-    <style>
-        /* HTMX Loading Indicator */
-        .htmx-indicator {
-            opacity: 0;
-            transition: opacity 200ms;
-        }
-        .htmx-request .htmx-indicator {
-            opacity: 1;
-        }
-        .htmx-request.htmx-indicator {
-            opacity: 1;
-        }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-        
-        /* Mobile bottom nav */
-        @media (max-width: 768px) {
-            .mobile-bottom-nav {
-                display: flex;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: white;
-                border-top: 1px solid #e5e7eb;
-                padding: 0.5rem;
-                justify-content: space-around;
-                z-index: 50;
-            }
-            .mobile-bottom-nav.hidden {
-                display: none;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .mobile-bottom-nav {
-                display: none;
-            }
-        }
-    </style>
-    
-    {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50" x-data="{ sidebarOpen: false, mobileMenuOpen: false }">
-    
-    <!-- Mobile Header -->
-    <header class="md:hidden bg-indigo-600 text-white p-4 flex justify-between items-center sticky top-0 z-40">
-        <h1 class="text-lg font-bold">Attendance System</h1>
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-        </button>
-    </header>
-    
-    <!-- Sidebar - Desktop -->
-    <aside class="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-gray-900 text-white">
-        <div class="flex items-center justify-center h-16 bg-indigo-700">
-            <h1 class="text-xl font-bold">Attendance System</h1>
-        </div>
-        
-        <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-            <a href="{% url 'frontend:dashboard' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-md {% if request.path == '/admin/dashboard/' %}bg-indigo-800 text-white{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
-                <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                </svg>
-                Dashboard
+<body class="bg-gray-50">
+
+    <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+      <div class="px-3 py-3 lg:px-5 lg:pl-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center justify-start rtl:justify-end">
+            <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200">
+                <span class="sr-only">Open sidebar</span>
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path></svg>
+            </button>
+            <a href="/" class="flex ms-2 md:me-24">
+              <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">Exodus</span>
             </a>
-            
-            <a href="{% url 'frontend:lecturer_list' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">
-                <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-                Lecturers
-            </a>
-            
-            <a href="{% url 'frontend:student_list' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">
-                <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-                Students
-            </a>
-            
-            <a href="{% url 'frontend:course_list' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">
-                <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                </svg>
-                Courses
-            </a>
-            
-            <a href="{% url 'frontend:attendance_index' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">
-                <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                </svg>
-                Attendance
-            </a>
-            
-            <a href="{% url 'frontend:reports_index' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">
-                <svg class="mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                Reports
-            </a>
-        </nav>
-        
-        <!-- User Info -->
-        <div class="border-t border-gray-700 p-4">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
-                        <span class="text-sm font-medium text-white">{{ request.user.username|make_list|first|upper }}</span>
-                    </div>
+          </div>
+          <div class="flex items-center">
+              <div class="flex items-center ms-3">
+                {% if user.is_authenticated %}
+                <div class="mr-3 text-sm text-gray-900 font-medium">
+                    {{ user.username }}
                 </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium text-white">{{ request.user.username }}</p>
-                    <a href="{% url 'frontend:logout' %}" class="text-xs text-gray-400 hover:text-white">Logout</a>
-                </div>
-            </div>
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-4 py-2 text-center">Logout</button>
+                </form>
+                {% else %}
+                <a href="{% url 'login' %}" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center">Login</a>
+                {% endif %}
+              </div>
+          </div>
         </div>
+      </div>
+    </nav>
+
+    <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0" aria-label="Sidebar">
+       <div class="h-full px-3 pb-4 overflow-y-auto bg-white">
+          <ul class="space-y-2 font-medium">
+             <li>
+                <a href="{% url 'frontend:dashboard' %}" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                   <svg class="w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 21"><path d="M16.975 11H10V4.025a1 1 0 0 0-1.066-.998 8.5 8.5 0 1 0 9.039 9.039.999.999 0 0 0-1-1.066h.002Z"/><path d="M12.5 0c-.157 0-.311.01-.565.027A1 1 0 0 0 11 1.02V10h8.975a1 1 0 0 0 1-.935c.013-.188.028-.374.028-.565A8.51 8.51 0 0 0 12.5 0Z"/></svg>
+                   <span class="ms-3">Dashboard</span>
+                </a>
+             </li>
+             <li>
+                 <a href="/admin/" class="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group">
+                    <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                    <span class="flex-1 ms-3 whitespace-nowrap">Admin Panel</span>
+                 </a>
+             </li>
+          </ul>
+       </div>
     </aside>
-    
-    <!-- Mobile Menu Overlay -->
-    <div x-show="mobileMenuOpen" 
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-gray-600 bg-opacity-75 z-50 md:hidden"
-         @click="mobileMenuOpen = false">
-        
-        <div class="fixed inset-y-0 left-0 w-64 bg-gray-900 text-white transform transition-transform"
-             :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'">
-            <div class="flex items-center justify-center h-16 bg-indigo-700">
-                <h1 class="text-xl font-bold">Attendance System</h1>
-            </div>
-            
-            <nav class="px-2 py-4 space-y-1">
-                <a href="{% url 'frontend:dashboard' %}" class="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">Dashboard</a>
-                <a href="{% url 'frontend:lecturer_list' %}" class="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">Lecturers</a>
-                <a href="{% url 'frontend:student_list' %}" class="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">Students</a>
-                <a href="{% url 'frontend:course_list' %}" class="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">Courses</a>
-                <a href="{% url 'frontend:attendance_index' %}" class="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">Attendance</a>
-                <a href="{% url 'frontend:reports_index' %}" class="block px-4 py-2 rounded-md text-gray-300 hover:bg-gray-800 hover:text-white">Reports</a>
-                <a href="{% url 'frontend:logout' %}" class="block px-4 py-2 rounded-md text-red-400 hover:bg-gray-800">Logout</a>
-            </nav>
-        </div>
-    </div>
-    
-    <!-- Main Content -->
-    <main class="md:pl-64 min-h-screen pb-20 md:pb-0">
-        <div class="py-6 px-4 sm:px-6 lg:px-8">
-            
-            <!-- Messages -->
+
+    <div class="p-4 sm:ml-64">
+       <div class="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700 mt-14">
             {% if messages %}
-            <div class="mb-4 space-y-2">
                 {% for message in messages %}
-                <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}"
-                     x-data="{ show: true }"
-                     x-show="show"
-                     x-init="setTimeout(() => show = false, 5000)">
+                <div class="p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50" role="alert">
                     {{ message }}
                 </div>
                 {% endfor %}
-            </div>
             {% endif %}
-            
-            {% block content %}{% endblock %}
-        </div>
-    </main>
-    
-    <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-bottom-nav">
-        <a href="{% url 'frontend:dashboard' %}" class="flex flex-col items-center p-2 {% if request.path == '/admin/dashboard/' %}text-indigo-600{% else %}text-gray-600{% endif %}">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-            </svg>
-            <span class="text-xs mt-1">Home</span>
-        </a>
-        <a href="{% url 'frontend:attendance_index' %}" class="flex flex-col items-center p-2 text-gray-600">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg>
-            <span class="text-xs mt-1">Attendance</span>
-        </a>
-        <a href="{% url 'frontend:course_list' %}" class="flex flex-col items-center p-2 text-gray-600">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-            </svg>
-            <span class="text-xs mt-1">Courses</span>
-        </a>
-        <a href="{% url 'frontend:student_list' %}" class="flex flex-col items-center p-2 text-gray-600">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-            </svg>
-            <span class="text-xs mt-1">Students</span>
-        </a>
-    </nav>
-    
-    <!-- HTMX Config -->
-    <script>
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
-        });
-        
-        // Show loading indicator on request
-        document.body.addEventListener('htmx:beforeRequest', function(evt) {
-            const indicator = document.querySelector('.htmx-indicator');
-            if (indicator) indicator.style.display = 'inline-block';
-        });
-        
-        // Hide loading indicator on response
-        document.body.addEventListener('htmx:afterRequest', function(evt) {
-            const indicator = document.querySelector('.htmx-indicator');
-            if (indicator) indicator.style.display = 'none';
-        });
-    </script>
-    
-    {% block extra_js %}{% endblock %}
+
+            {% block content %}
+            {% endblock %}
+       </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
 </body>
 </html>
