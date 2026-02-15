@@ -6,7 +6,7 @@ app_name = 'frontend'
 
 urlpatterns = [
     # Redirect root to dashboard
-    path('', RedirectView.as_view(pattern_name='dashboard', permanent=False)),
+    path('', RedirectView.as_view(pattern_name='frontend:dashboard', permanent=False)),
     
     # Authentication
     path('login/', views.login_view, name='login'),
