@@ -25,10 +25,115 @@
                        class="w-full px-4 py-4 border-2 border-gray-300 rounded-lg text-center text-2xl font-mono tracking-widest uppercase focus:ring-green-500 focus:border-green-500">
             </div>
             
+            <!-- QR Code Scanner Button -->
+            <div>
+                <button type="button" onclick="startQRScanner()" 
+                        class="w-full py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg flex items-center justify-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                    </svg>
+                    Scan QR Code
+                </button>
+            </div>
+            
             <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-lg">
                 Mark Attendance
             </button>
         </form>
+
+        <!-- QR Scanner Modal -->
+        <div id="qrScannerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Scan QR Code</h3>
+                    <button onclick="stopQRScanner()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="bg-gray-100 rounded-lg p-4 mb-4">
+                    <video id="qrScannerVideo" class="w-full rounded-lg" autoplay playsinline></video>
+                    <canvas id="qrScannerCanvas" class="hidden"></canvas>
+                </div>
+                <p class="text-sm text-gray-500 text-center">Position the QR code within the frame</p>
+            </div>
+        </div>
+
+        <script>
+            let scanner = null;
+            
+            function startQRScanner() {
+                const modal = document.getElementById('qrScannerModal');
+                const video = document.getElementById('qrScannerVideo');
+                
+                modal.classList.remove('hidden');
+                
+                // Access camera
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(stream => {
+                        video.srcObject = stream;
+                        
+                        // Initialize QR scanner
+                        const canvas = document.getElementById('qrScannerCanvas');
+                        const context = canvas.getContext('2d');
+                        
+                        scanner = setInterval(() => {
+                            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                                canvas.width = video.videoWidth;
+                                canvas.height = video.videoHeight;
+                                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                
+                                // Use JSQR library for scanning
+                                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                                const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+                                
+                                if (qrCode) {
+                                    stopQRScanner();
+                                    const token = qrCode.data.replace('attendance_token:', '');
+                                    document.getElementById('token').value = token;
+                                    document.getElementById('token').focus();
+                                    document.getElementById('token').select();
+                                    alert('QR code scanned successfully! Token: ' + token);
+                                }
+                            }
+                        }, 100);
+                    })
+                    .catch(error => {
+                        console.error('Error accessing camera:', error);
+                        alert('Unable to access camera. Please check permissions.');
+                        modal.classList.add('hidden');
+                    });
+            }
+            
+            function stopQRScanner() {
+                const modal = document.getElementById('qrScannerModal');
+                const video = document.getElementById('qrScannerVideo');
+                
+                modal.classList.add('hidden');
+                
+                if (scanner) {
+                    clearInterval(scanner);
+                    scanner = null;
+                }
+                
+                if (video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+            }
+            
+            // Close modal on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    stopQRScanner();
+                }
+            });
+        </script>
+
+        <!-- Load JSQR library -->
+        <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
         
         <div class="mt-6 text-center text-sm text-gray-500">
             <p>Token is case-insensitive</p>

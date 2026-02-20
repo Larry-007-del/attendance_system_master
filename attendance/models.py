@@ -148,15 +148,42 @@ def log_attendance_change(sender, instance, action, pk_set, **kwargs):
         print(f"AUDIT LOG: Students {students} were {verb} from Attendance ID {instance.id}")
 
 
+import qrcode
+import io
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
+
 class AttendanceToken(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     token = models.CharField(max_length=6, unique=True)
     generated_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    qr_code = models.ImageField(upload_to='qr_codes/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.course.name} - {self.token}"
+
+    def generate_qr_code(self):
+        """Generate QR code for the attendance token"""
+        # Create QR code with token information
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(f"attendance_token:{self.token}")
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color='black', back_color='white')
+        
+        # Save to in-memory file
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+        
+        return buffer
 
     def save(self, *args, **kwargs):
         if self.generated_at is None:
@@ -167,5 +194,11 @@ class AttendanceToken(models.Model):
 
         if self.expires_at <= timezone.now():
             self.is_active = False
+
+        # Generate QR code if it doesn't exist
+        if not self.qr_code:
+            qr_buffer = self.generate_qr_code()
+            filename = f"qr_{self.token}.png"
+            self.qr_code = SimpleUploadedFile(filename, qr_buffer.read(), content_type='image/png')
 
         super().save(*args, **kwargs)

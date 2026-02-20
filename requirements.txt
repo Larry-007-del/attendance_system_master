@@ -34,3 +34,4 @@ geopy==2.4.1
 dj-database-url
 sentry-sdk
 django-jazzmin
+qrcode

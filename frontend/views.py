@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
@@ -21,6 +21,7 @@ from .forms import LecturerForm, StudentForm, CourseForm, StudentUploadForm
 # ==================== Authentication ====================
 
 def login_view(request):
+    """View for user login"""
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -35,17 +36,22 @@ def login_view(request):
     return render(request, 'frontend/login.html', {'form': form})
 
 
+from django.views.decorators.csrf import csrf_protect
+
+@csrf_protect
 def logout_view(request):
-    """Logout view"""
+    """View for user logout - handles both GET and POST"""
     logout(request)
-    return redirect('frontend:login')
+    # Force a hard redirect to login page
+    from django.http import HttpResponseRedirect
+    return HttpResponseRedirect('/login/')
 
 
 # ==================== Dashboard ====================
 
 @login_required
 def dashboard(request):
-    # 1. Setup safe default values (so the page never crashes on missing data)
+    """Main dashboard view - safe for all user types"""
     context = {
         'role_label': 'User',
         'attendance_rate': 0,
@@ -55,29 +61,25 @@ def dashboard(request):
         'is_admin': request.user.is_superuser,
     }
 
-    # 2. Try to get Student data (Safely)
-    try:
-        # Check if 'student' attribute exists and is not None
-        if hasattr(request.user, 'student') and request.user.student:
-            context['is_student'] = True
-            context['role_label'] = 'Student'
-            # Try to get rate, default to 0 if it fails
-            context['attendance_rate'] = getattr(request.user.student, 'attendance_rate', 0)
-    except Exception:
-        # If ANYTHING goes wrong (db error, math error), just keep defaults
-        pass
-
-    # 3. Try to get Lecturer data (Safely)
-    try:
-        if hasattr(request.user, 'lecturer') and request.user.lecturer:
-            context['is_lecturer'] = True
-            context['role_label'] = 'Lecturer'
-    except Exception:
-        pass
-
-    # 4. Override label for Admin
+    # Safely determine user role
     if request.user.is_superuser:
         context['role_label'] = 'Administrator'
+    elif hasattr(request.user, 'lecturer'):
+        try:
+            if request.user.lecturer:
+                context['is_lecturer'] = True
+                context['role_label'] = 'Lecturer'
+        except Exception:
+            pass
+    elif hasattr(request.user, 'student'):
+        try:
+            if request.user.student:
+                context['is_student'] = True
+                context['role_label'] = 'Student'
+                # Get attendance rate with fallback
+                context['attendance_rate'] = getattr(request.user.student, 'attendance_rate', 0)
+        except Exception:
+            pass
 
     return render(request, 'dashboard.html', context)
 
@@ -610,6 +612,12 @@ def attendance_take(request):
             is_active=True,
         )
         
+        # Generate and save QR code
+        qr_buffer = att_token.generate_qr_code()
+        filename = f"qr_{att_token.token}.png"
+        att_token.qr_code = SimpleUploadedFile(filename, qr_buffer.read(), content_type='image/png')
+        att_token.save()
+        
         # Update course status
         course.is_active = True
         course.save()
@@ -670,11 +678,28 @@ def attendance_detail(request, pk):
     all_students = course.students.all()
     present_ids = attendance.present_students.values_list('id', flat=True)
     
+    # Get attendance token for this course and date
+    token = None
+    qr_code = None
+    try:
+        att_token = AttendanceToken.objects.get(
+            course=course,
+            is_active=True,
+            generated_at__date=attendance.date
+        )
+        token = att_token.token
+        if att_token.qr_code:
+            qr_code = att_token.qr_code.url
+    except AttendanceToken.DoesNotExist:
+        pass
+    
     context = {
         'attendance': attendance,
         'course': course,
         'all_students': all_students,
         'present_ids': list(present_ids),
+        'token': token,
+        'qr_code': qr_code,
     }
     return render(request, 'attendance/detail.html', context)
 

@@ -70,10 +70,17 @@ class AttendanceSerializer(serializers.ModelSerializer):
 # Attendance token serializer
 class AttendanceTokenSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
+    qr_code = serializers.SerializerMethodField()
 
     class Meta:
         model = AttendanceToken
-        fields = ['id', 'course', 'token', 'generated_at', 'expires_at', 'is_active']
+        fields = ['id', 'course', 'token', 'generated_at', 'expires_at', 'is_active', 'qr_code']
+
+    def get_qr_code(self, obj):
+        request = self.context.get('request')
+        if obj.qr_code and request:
+            return request.build_absolute_uri(obj.qr_code.url)
+        return None
 
 # Logout serializer
 class LogoutSerializer(serializers.Serializer):

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path, include, re_path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
@@ -23,20 +23,16 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    # 1. The Real Django Admin
+    # Django Admin
     path('admin/', admin.site.urls),
 
-    # 2. Your Frontend
+    # Frontend URLs (including login/logout)
     path('', include('frontend.urls')),
     
-    # 3. Auth URLs - REQUIRED FOR DASHBOARD TO LOAD
-    path('login/', auth_views.LoginView.as_view(template_name='frontend/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    
-    # 4. API
+    # API endpoints
     path('api/', include('attendance.urls')),
     
-    # 5. Swagger Docs
+    # API documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
