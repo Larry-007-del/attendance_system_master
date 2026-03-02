@@ -204,10 +204,9 @@ class StudentViewsTest(FrontendViewsTestCase):
         """Test student creation"""
         self.client.login(username='testadmin', password='testpassword123')
         response = self.client.post(reverse('frontend:student_create'), {
-            'user-username': 'newstudent',
-            'user-email': 'newstudent@example.com',
-            'user-password1': 'testpassword123',
-            'user-password2': 'testpassword123',
+            'username': 'newstudent',
+            'email': 'newstudent@example.com',
+            'password': 'testpassword123',
             'student_id': 'ST124',
             'name': 'New Student',
             'programme_of_study': 'Mechanical Engineering',

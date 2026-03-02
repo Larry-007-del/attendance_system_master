@@ -91,11 +91,15 @@
     <div class="p-4 sm:ml-64">
        <div class="p-4 border-2 border-gray-200 border-dashed rounded-lg dark:border-gray-700 mt-14 min-h-screen">
             {% if messages %}
+            <div class="fixed top-5 right-5 z-50 space-y-3">
                 {% for message in messages %}
-                <div class="p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" 
+                     x-transition.duration.500ms
+                     class="p-4 rounded-md shadow-lg text-white {% if message.tags == 'error' %}bg-red-500{% elif message.tags == 'success' %}bg-green-500{% else %}bg-blue-500{% endif %}">
                     {{ message }}
                 </div>
                 {% endfor %}
+            </div>
             {% endif %}
 
             {% block content %}
@@ -108,19 +112,6 @@
     <!-- Leaflet Map JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- SweetAlert2 Messages -->
-    {% if messages %}
-    <script>
-        {% for message in messages %}
-            Swal.fire({
-                title: "{% if message.tags == 'success' %}Success!{% elif message.tags == 'error' %}Error!{% else %}Notice{% endif %}",
-                text: "{{ message }}",
-                icon: "{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% else %}info{% endif %}",
-                confirmButtonColor: '#2563EB',
-                confirmButtonText: 'OK'
-            });
-        {% endfor %}
-    </script>
-    {% endif %}
+
 </body>
 </html>

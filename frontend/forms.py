@@ -42,6 +42,17 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = ['student_id', 'name', 'programme_of_study', 'year', 'phone_number', 
                  'notification_preference', 'is_notifications_enabled']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make notification fields optional
+        self.fields['notification_preference'].required = False
+        self.fields['is_notifications_enabled'].required = False
+        
+        # Set default values if not provided
+        if not self.instance.pk:  # New instance
+            self.fields['notification_preference'].initial = 'both'
+            self.fields['is_notifications_enabled'].initial = True
     
     def clean_year(self):
         year = self.cleaned_data.get('year')

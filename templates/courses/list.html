@@ -38,7 +38,7 @@
 <!-- Courses Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for course in courses %}
-    <div class="bg-white rounded-lg shadow hover:shadow-lg transition">
+    <div id="course-card-{{ course.id }}" class="bg-white rounded-lg shadow hover:shadow-lg transition">
         <div class="p-6">
             <div class="flex justify-between items-start mb-4">
                 <div>
@@ -68,6 +68,13 @@
             <div class="mt-4 flex gap-2">
                 <a href="{% url 'frontend:course_detail' course.id %}" class="flex-1 text-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">View</a>
                 <a href="{% url 'frontend:course_edit' course.id %}" class="flex-1 text-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200">Edit</a>
+                <button hx-delete="{% url 'frontend:course_delete' course.id %}" 
+                        hx-confirm="Are you sure you want to delete {{ course.course_code }}?" 
+                        hx-target="#course-card-{{ course.id }}" 
+                        hx-swap="outerHTML swap:1s"
+                        class="text-center px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 focus:outline-none">
+                    Delete
+                </button>
             </div>
         </div>
     </div>

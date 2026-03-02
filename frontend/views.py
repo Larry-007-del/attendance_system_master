@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
+import secrets
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
@@ -27,7 +28,8 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('frontend:dashboard')
+            next_url = request.POST.get('next') or 'frontend:dashboard'
+            return redirect(next_url)
         else:
             messages.error(request, "Invalid username or password.")
     else:
@@ -76,7 +78,7 @@ def dashboard(request):
                 context['taught_courses'] = Course.objects.filter(lecturer=request.user.lecturer).annotate(
                     enrolled_count=Count('students')
                 )
-        except Exception:
+        except Lecturer.DoesNotExist:
             pass
     elif hasattr(request.user, 'student'):
         try:
@@ -87,7 +89,7 @@ def dashboard(request):
                 context['attendance_rate'] = getattr(request.user.student, 'attendance_rate', 0)
                 # Get enrolled courses with lecturer information
                 context['enrolled_courses'] = Course.objects.filter(students=request.user.student).select_related('lecturer')
-        except Exception:
+        except Student.DoesNotExist:
             pass
 
     return render(request, 'dashboard.html', context)
@@ -106,7 +108,7 @@ def ajax_dashboard_stats(request):
         'total_students': Student.objects.count(),
         'total_courses': Course.objects.count(),
         'active_courses': Course.objects.filter(is_active=True).count(),
-        'today_attendance': Attendance.objects.filter(date=timezone.now().date()).count(),
+        'today_attendance': Attendance.objects.filter(date=timezone.localdate()).count(),
     }
     return JsonResponse(stats)
 
@@ -312,12 +314,14 @@ def student_create(request):
                 # Validate required fields
                 if not username or not password:
                     messages.error(request, 'Username and password are required')
-                    return redirect('frontend:student_create')
+                    form = StudentForm(request.POST)
+                    return render(request, 'students/create.html', {'form': form})
                 
                 # Check if username already exists
                 if User.objects.filter(username=username).exists():
                     messages.error(request, 'Username already exists')
-                    return redirect('frontend:student_create')
+                    form = StudentForm(request.POST)
+                    return render(request, 'students/create.html', {'form': form})
                 
                 user = User.objects.create_user(username=username, email=email, password=password)
                 
@@ -342,10 +346,11 @@ def student_create(request):
         except ValueError:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{error}')
-            return redirect('frontend:student_create')
+                    messages.error(request, f'{field.replace("_", " ").title()}: {error}')
+            return render(request, 'students/create.html', {'form': form})
     
-    return render(request, 'students/create.html')
+    # GET request: render empty form
+    return render(request, 'students/create.html', {'form': StudentForm()})
 
 
 @login_required
@@ -356,35 +361,47 @@ def upload_students(request):
         if form.is_valid():
             csv_file = request.FILES['file']
             
-            # Decode the file
-            data_set = csv_file.read().decode('UTF-8')
-            io_string = io.StringIO(data_set)
-            next(io_string)  # Skip header row
-            
-            count = 0
-            for column in csv.reader(io_string, delimiter=',', quotechar='|'):
-                # Expecting CSV format: First Name, Last Name, Email, Student ID
-                first_name = column[0]
-                last_name = column[1]
-                email = column[2]
-                student_id = column[3]
+            try:
+                data_set = csv_file.read().decode('utf-8-sig')
+                io_string = io.StringIO(data_set)
+                
+                header = next(io_string, None)
+                if not header:
+                    raise ValueError("The uploaded CSV file is empty.")
+                
+                count = 0
+                for column in csv.reader(io_string, delimiter=',', quotechar='|'):
+                    first_name = column[0]
+                    last_name = column[1]
+                    email = column[2]
+                    student_id = column[3]
 
-                # 1. Create User (Avoid duplicates)
-                if not User.objects.filter(username=student_id).exists():
-                    user = User.objects.create_user(
-                        username=student_id, 
-                        email=email, 
-                        password='password123',
-                        first_name=first_name,
-                        last_name=last_name
-                    )
-                    
-                    # 2. Create Student Profile
-                    Student.objects.create(user=user, student_id=student_id)
-                    count += 1
-            
-            messages.success(request, f'{count} students uploaded successfully!')
-            return redirect('frontend:dashboard')
+                    if not User.objects.filter(username=student_id).exists():
+                        random_password = secrets.token_urlsafe(12)
+                        user = User.objects.create_user(
+                            username=student_id, 
+                            email=email, 
+                            password=random_password,
+                            first_name=first_name,
+                            last_name=last_name
+                        )
+                        
+                        Student.objects.create(user=user, student_id=student_id)
+                        
+                        reset_form = PasswordResetForm({'email': user.email})
+                        if reset_form.is_valid():
+                            reset_form.save(request=request, use_https=request.is_secure())
+                            
+                        count += 1
+                
+                messages.success(request, f'{count} students uploaded successfully!')
+                return redirect('frontend:dashboard')
+                
+            except UnicodeDecodeError:
+                messages.error(request, "Invalid file encoding. Please ensure the CSV is saved as UTF-8.")
+            except Exception as e:
+                messages.error(request, f"Error processing file: {str(e)}")
+    
     else:
         form = StudentUploadForm()
     
@@ -395,8 +412,8 @@ def upload_students(request):
 def student_detail(request, pk):
     """View student details"""
     student = get_object_or_404(Student, pk=pk)
-    enrollments = CourseEnrollment.objects.filter(student=student)
-    attendances = Attendance.objects.filter(present_students=student)
+    enrollments = CourseEnrollment.objects.filter(student=student).select_related('course')
+    attendances = Attendance.objects.filter(present_students=student).select_related('course').order_by('-date')
     
     context = {
         'student': student,
@@ -509,8 +526,17 @@ def course_create(request):
         else:
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, f'{error}')
-            return redirect('frontend:course_list')
+                    messages.error(request, f'{field.replace("_", " ").title()}: {error}')
+    
+    # GET request or validation error: render form
+    lecturers = Lecturer.objects.all()
+    students = Student.objects.all()
+    context = {
+        'lecturers': lecturers,
+        'students': students,
+        'form': form if 'form' in locals() else CourseForm(),
+    }
+    return render(request, 'courses/create.html', context)
     
     lecturers = Lecturer.objects.all()
     students = Student.objects.all()
@@ -579,11 +605,23 @@ def course_delete(request, pk):
     """Delete course"""
     course = get_object_or_404(Course, pk=pk)
     
+    # Security check: Only superusers or the course's lecturer can delete
+    if not (request.user.is_superuser or (hasattr(request.user, 'lecturer') and course.lecturer == request.user.lecturer)):
+        if request.headers.get('HX-Request'):
+            return HttpResponse('Unauthorized', status=403)
+        messages.error(request, "You do not have permission to delete this course.")
+        return redirect('frontend:course_list')
+
     if request.method == 'POST':
         course.delete()
+        if request.headers.get('HX-Request'):
+            return HttpResponse('')  # Return empty response for HTMX to remove row
         messages.success(request, 'Course deleted successfully!')
         return redirect('frontend:course_list')
     
+    if request.headers.get('HX-Request'):
+        return render(request, 'partials/course_delete_confirm.html', {'course': course})
+
     context = {'course': course}
     return render(request, 'courses/delete.html', context)
 
@@ -603,7 +641,7 @@ def ajax_search_courses(request):
 @login_required
 def attendance_index(request):
     """Attendance dashboard"""
-    today = timezone.now().date()
+    today = timezone.localdate()
     attendances = Attendance.objects.filter(date=today).select_related('course').prefetch_related('present_students')
     active_tokens = AttendanceToken.objects.filter(is_active=True)
     
@@ -624,7 +662,7 @@ def attendance_take(request):
         lecturer = Lecturer.objects.get(user=request.user)
         active_attendance = Attendance.objects.filter(
             course__lecturer=lecturer,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             is_active=True
         ).first()
         
@@ -656,7 +694,7 @@ def attendance_take(request):
         # Create attendance session
         attendance = Attendance.objects.create(
             course=course,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             lecturer_latitude=latitude or None,
             lecturer_longitude=longitude or None,
             is_active=True,
@@ -709,7 +747,7 @@ def end_attendance(request):
             # Find active attendance for the course
             attendance = Attendance.objects.get(
                 course_id=course_id,
-                date=timezone.now().date(),
+                date=timezone.localdate(),
                 is_active=True
             )
             
@@ -897,8 +935,8 @@ def manual_mark_present(request, attendance_id, student_id):
     """Manually mark a student as present"""
     attendance = get_object_or_404(Attendance, id=attendance_id)
     
-    # Security check
-    if attendance.course.lecturer != request.user.lecturer:
+    # Security check: Only lecturers can manually mark attendance
+    if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
         return HttpResponse("Unauthorized", status=403)
         
     student = get_object_or_404(Student, id=student_id)
@@ -1010,6 +1048,11 @@ def register_view(request):
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
         role = request.POST.get('role')
+        
+        # Validate role
+        if role not in ['lecturer', 'student']:
+            messages.error(request, "Invalid role selected. Please choose either Student or Lecturer.")
+            return redirect('frontend:register')
         
         # Validate passwords
         if password1 != password2:
