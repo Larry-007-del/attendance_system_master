@@ -94,14 +94,14 @@ class LogoutViewTest(FrontendViewsTestCase):
         self.assertIn('/login/', response.url)
     
     def test_logout_view_get(self):
-        """Test logout with GET request"""
+        """Test logout GET request redirects to dashboard without logging out (CSRF protection)"""
         # Login first
         self.client.login(username='testadmin', password='testpassword123')
         
-        # Test logout without following redirect
+        # GET should NOT log the user out — redirects to dashboard instead
         response = self.client.get(reverse('frontend:logout'), follow=False)
         self.assertIn(response.status_code, [301, 302])
-        self.assertIn('/login/', response.url)
+        self.assertIn('/dashboard/', response.url)
 
 class DashboardViewTest(FrontendViewsTestCase):
     """Tests for dashboard view"""
@@ -180,10 +180,9 @@ class LecturerViewsTest(FrontendViewsTestCase):
         """Test lecturer creation"""
         self.client.login(username='testadmin', password='testpassword123')
         response = self.client.post(reverse('frontend:lecturer_create'), {
-            'user-username': 'newlecturer',
-            'user-email': 'newlecturer@example.com',
-            'user-password1': 'testpassword123',
-            'user-password2': 'testpassword123',
+            'username': 'newlecturer',
+            'email': 'newlecturer@example.com',
+            'password': 'testpassword123',
             'staff_id': 'L002',
             'name': 'New Lecturer',
             'department': 'Electrical Engineering'

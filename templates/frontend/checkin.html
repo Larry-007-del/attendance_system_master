@@ -131,6 +131,7 @@
                     const formData = new FormData(form);
                     formData.append('latitude', position.coords.latitude);
                     formData.append('longitude', position.coords.longitude);
+                    formData.append('attendance_token', formData.get('token'));
                     
                     fetch('{% url "submit_location" %}', {
                         method: 'POST',
@@ -171,8 +172,9 @@
         }
     });
 
-    // Initialize Map
-    var map = L.map('map').setView([5.6037, -0.1870], 17); // Example: Accra coords
+    // Initialize Map - center on student's location once acquired
+    var defaultLat = 5.6037, defaultLng = -0.1870;
+    var map = L.map('map').setView([defaultLat, defaultLng], 17);
 
     // Add OpenStreetMap Tiles
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -180,33 +182,26 @@
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Draw the Classroom Zone (The Geofence)
-    var circle = L.circle([5.6037, -0.1870], {
-        color: 'green',
-        fillColor: '#22c55e',
-        fillOpacity: 0.2,
-        radius: 50 // 50 meters
-    }).addTo(map);
-
-    // Show the Student's Location (Blue Dot)
+    // Show the Student's Location (Blue Dot) and center map on it
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(position) {
             var lat = position.coords.latitude;
             var lng = position.coords.longitude;
 
+            // Update the GPS signal indicator
+            document.querySelector('.text-sm.font-medium').textContent = 
+                'GPS Signal: Strong (Accuracy: ' + Math.round(position.coords.accuracy) + 'm)';
+
+            map.setView([lat, lng], 17);
+
             L.marker([lat, lng]).addTo(map)
                 .bindPopup("You are here")
                 .openPopup();
-
-            // Auto-zoom to fit both
-            var group = new L.featureGroup([
-                L.marker([lat, lng]),
-                circle
-            ]);
-            map.fitBounds(group.getBounds());
         }, function(error) {
             console.log("Geolocation error: " + error.message);
-        });
+            document.querySelector('.text-sm.font-medium').textContent = 
+                'GPS Signal: Unavailable - ' + error.message;
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
     }
 </script>
 {% endblock %}

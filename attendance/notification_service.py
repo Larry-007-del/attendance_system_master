@@ -2,6 +2,8 @@
 Notification Service for Attendance System
 Handles email and SMS notifications for students
 """
+import logging
+
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -10,13 +12,15 @@ from datetime import timedelta
 
 from .models import Attendance, Student
 
+logger = logging.getLogger(__name__)
+
 
 def send_attendance_started_notifications(attendance, token):
     """
     Send notifications to students when an attendance session starts
     """
     course = attendance.course
-    students = course.students.all()
+    students = course.students.select_related('user').all()
     
     for student in students:
         # Send email notification if student wants it
@@ -53,7 +57,7 @@ def send_attendance_started_email(student, course, token):
         )
         return True
     except Exception as e:
-        print(f"Failed to send email to {student.user.email}: {str(e)}")
+        logger.error("Failed to send email to %s: %s", student.user.email, e)
         return False
 
 
@@ -82,10 +86,10 @@ def send_attendance_started_sms(student, course, token):
             sms.send(message, [phone_number])
         else:
             # Fallback to simulation if no SMS service configured
-            print(f"Simulating SMS to {phone_number}: {message}")
+            logger.info("Simulating SMS to %s: %s", phone_number, message)
         return True
     except Exception as e:
-        print(f"Failed to send SMS to {phone_number}: {str(e)}")
+        logger.error("Failed to send SMS to %s: %s", phone_number, e)
         return False
 
 
@@ -94,10 +98,11 @@ def send_attendance_expiring_notifications(attendance, token):
     Send notifications to students when an attendance session is about to expire
     """
     course = attendance.course
-    students = course.students.all()
+    students = course.students.select_related('user').all()
+    present_ids = set(attendance.present_students.values_list('id', flat=True))
     
     for student in students:
-        if student not in attendance.present_students.all():
+        if student.id not in present_ids:
             if student.should_send_email_notifications():
                 send_attendance_expiring_email(student, course, token, attendance)
             
@@ -110,7 +115,8 @@ def send_attendance_expiring_email(student, course, token, attendance):
     Send email notification for expiring attendance session
     """
     subject = f"Attendance Session Expiring Soon - {course.name}"
-    expiration_time = attendance.created_at + timedelta(hours=4)
+    duration_hours = attendance.duration_hours or 2
+    expiration_time = attendance.created_at + timedelta(hours=duration_hours)
     context = {
         'student': student,
         'course': course,
@@ -132,7 +138,7 @@ def send_attendance_expiring_email(student, course, token, attendance):
         )
         return True
     except Exception as e:
-        print(f"Failed to send email to {student.user.email}: {str(e)}")
+        logger.error("Failed to send expiring email to %s: %s", student.user.email, e)
         return False
 
 
@@ -140,7 +146,8 @@ def send_attendance_expiring_sms(student, course, token, attendance):
     """
     Send SMS notification for expiring attendance session
     """
-    expiration_time = attendance.created_at + timedelta(hours=4)
+    duration_hours = attendance.duration_hours or 2
+    expiration_time = attendance.created_at + timedelta(hours=duration_hours)
     message = f"Attendance for {course.course_code} expires in 15 minutes. Token: {token}"
     phone_number = student.phone_number
     
@@ -162,10 +169,10 @@ def send_attendance_expiring_sms(student, course, token, attendance):
             sms.send(message, [phone_number])
         else:
             # Fallback to simulation if no SMS service configured
-            print(f"Simulating SMS to {phone_number}: {message}")
+            logger.info("Simulating SMS to %s: %s", phone_number, message)
         return True
     except Exception as e:
-        print(f"Failed to send SMS to {phone_number}: {str(e)}")
+        logger.error("Failed to send SMS to %s: %s", phone_number, e)
         return False
 
 
@@ -174,10 +181,10 @@ def send_attendance_missed_notifications(attendance):
     Send notifications to students who missed an attendance session
     """
     course = attendance.course
-    present_students = attendance.present_students.all()
-    all_students = course.students.all()
+    present_ids = set(attendance.present_students.values_list('id', flat=True))
+    all_students = course.students.select_related('user').all()
     
-    missed_students = [student for student in all_students if student not in present_students]
+    missed_students = [student for student in all_students if student.id not in present_ids]
     
     for student in missed_students:
         if student.should_send_email_notifications():
@@ -212,7 +219,7 @@ def send_attendance_missed_email(student, course, attendance):
         )
         return True
     except Exception as e:
-        print(f"Failed to send email to {student.user.email}: {str(e)}")
+        logger.error("Failed to send missed email to %s: %s", student.user.email, e)
         return False
 
 
@@ -241,8 +248,8 @@ def send_attendance_missed_sms(student, course, attendance):
             sms.send(message, [phone_number])
         else:
             # Fallback to simulation if no SMS service configured
-            print(f"Simulating SMS to {phone_number}: {message}")
+            logger.info("Simulating SMS to %s: %s", phone_number, message)
         return True
     except Exception as e:
-        print(f"Failed to send SMS to {phone_number}: {str(e)}")
+        logger.error("Failed to send SMS to %s: %s", phone_number, e)
         return False

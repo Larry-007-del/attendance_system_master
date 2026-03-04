@@ -14,7 +14,8 @@ def schedule_attendance_expiration_reminder(attendance, token):
     Schedule a reminder to be sent 15 minutes before the attendance session expires
     """
     # Calculate when to send the reminder (15 minutes before expiry)
-    reminder_time = attendance.created_at + timedelta(hours=3, minutes=45)
+    duration_hours = attendance.duration_hours or 2
+    reminder_time = attendance.created_at + timedelta(hours=duration_hours) - timedelta(minutes=15)
     time_until_reminder = (reminder_time - timezone.now()).total_seconds()
     
     if time_until_reminder > 0:
@@ -30,6 +31,15 @@ def schedule_attendance_expiration_reminder(attendance, token):
     else:
         # Session already expired or close to expiring
         return False
+
+
+def send_attendance_started_notifications(attendance, token):
+    """
+    Send notifications to students when attendance session starts
+    This should be called when the session begins
+    """
+    from .notification_service import send_attendance_started_notifications
+    send_attendance_started_notifications(attendance, token)
 
 
 def send_missed_attendance_notifications(attendance):
@@ -60,6 +70,20 @@ try:
             self.retry(exc=e, countdown=60)  # Retry in 60 seconds
     
     @shared_task(bind=True, max_retries=3)
+    def celery_send_attendance_started_notifications(self, attendance_id, token):
+        """
+        Celery task to send attendance started notifications with retry logic
+        """
+        try:
+            attendance = Attendance.objects.get(id=attendance_id)
+            send_attendance_started_notifications(attendance, token)
+            return True
+        except Attendance.DoesNotExist:
+            return False
+        except Exception as e:
+            self.retry(exc=e, countdown=60)  # Retry in 60 seconds
+    
+    @shared_task(bind=True, max_retries=3)
     def celery_send_missed_attendance_notifications(self, attendance_id):
         """
         Celery task to send missed attendance notifications with retry logic
@@ -77,7 +101,8 @@ try:
         """
         Celery version of the reminder scheduler
         """
-        reminder_time = attendance.created_at + timedelta(hours=3, minutes=45)
+        duration_hours = attendance.duration_hours or 2
+        reminder_time = attendance.created_at + timedelta(hours=duration_hours) - timedelta(minutes=15)
         celery_send_attendance_expiring_notifications.apply_async(
             args=[attendance.id, token],
             eta=reminder_time

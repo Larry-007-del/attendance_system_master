@@ -1,0 +1,30 @@
+{% for lecturer in lecturers %}
+<tr class="hover:bg-gray-50">
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                <span class="text-indigo-600 font-bold">{{ lecturer.name|first|upper }}</span>
+            </div>
+            <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900">{{ lecturer.name }}</div>
+                <div class="text-sm text-gray-500">{{ lecturer.user.email }}</div>
+            </div>
+        </div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ lecturer.staff_id }}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ lecturer.department|default:"-" }}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ lecturer.phone_number|default:"-" }}</td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {{ lecturer.courses.count }} course{{ lecturer.courses.count|pluralize }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+        <a href="{% url 'frontend:lecturer_detail' lecturer.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
+        <a href="{% url 'frontend:lecturer_edit' lecturer.id %}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+        <a href="{% url 'frontend:lecturer_delete' lecturer.id %}" class="text-red-600 hover:text-red-900">Delete</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="6" class="px-6 py-8 text-center text-gray-500">No lecturers found matching your search.</td>
+</tr>
+{% endfor %}

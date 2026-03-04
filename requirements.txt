@@ -35,3 +35,4 @@ dj-database-url
 sentry-sdk
 django-jazzmin
 qrcode
+pyotp

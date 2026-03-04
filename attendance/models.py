@@ -1,9 +1,13 @@
+import logging
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from geopy.distance import geodesic
 from datetime import timedelta
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 class ActiveCourseManager(models.Manager):
@@ -44,6 +48,9 @@ class Student(models.Model):
     programme_of_study = models.CharField(max_length=255, blank=True, null=True)  # Added field
     year = models.CharField(max_length=2, blank=True, null=True)  # Added field
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    require_two_factor_auth = models.BooleanField(default=False)  # 2FA setting
+    two_factor_secret = models.CharField(max_length=100, blank=True, null=True)
+    is_two_factor_enabled = models.BooleanField(default=False)
     
     NOTIFICATION_CHOICES = [
         ('email', 'Email'),
@@ -90,8 +97,6 @@ class Course(models.Model):
         return f"{self.name} ({self.course_code})"
 
     def clean(self):
-        if not Lecturer.objects.filter(id=self.lecturer_id).exists():
-            raise ValidationError("Lecturer does not exist.")
         super().clean()
 
 class CourseEnrollment(models.Model):
@@ -150,6 +155,7 @@ class Attendance(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     require_two_factor_auth = models.BooleanField(default=False)  # Whether 2FA was required for this session
+    duration_hours = models.IntegerField(default=2)  # Session duration in hours
 
     class Meta:
         ordering = ['-date', '-created_at']
@@ -175,12 +181,11 @@ class Attendance(models.Model):
 
     @property
     def is_session_valid(self):
-        """Returns True only if the session is active AND created less than 4 hours ago"""
+        """Returns True only if the session is active AND not expired"""
         if not self.is_active:
             return False
         
-        # Hard limit: 4 hours (adjust as needed)
-        time_limit = self.created_at + timedelta(hours=4)
+        time_limit = self.created_at + timedelta(hours=self.duration_hours)
         return timezone.now() < time_limit
 
     def is_within_radius(self, student_lat, student_lon, radius_meters=50):
@@ -206,7 +211,7 @@ def log_attendance_change(sender, instance, action, pk_set, **kwargs):
     if action in ["post_add", "post_remove"]:
         verb = "Added" if action == "post_add" else "Removed"
         students = ", ".join([str(pk) for pk in pk_set])
-        print(f"AUDIT LOG: Students {students} were {verb} from Attendance ID {instance.id}")
+        logger.info("AUDIT: Students %s were %s from Attendance ID %s", students, verb, instance.id)
 
 
 import qrcode
@@ -251,7 +256,8 @@ class AttendanceToken(models.Model):
             self.generated_at = timezone.now()
 
         if self.expires_at is None:
-            self.expires_at = self.generated_at + timedelta(hours=4)
+            # Default: 2 hours if not specified
+            self.expires_at = self.generated_at + timedelta(hours=2)
 
         if self.expires_at <= timezone.now():
             self.is_active = False

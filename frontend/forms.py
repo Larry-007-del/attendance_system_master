@@ -82,3 +82,13 @@ class CourseForm(forms.ModelForm):
 class StudentUploadForm(forms.Form):
     """Form for bulk uploading students via CSV"""
     file = forms.FileField(label="Upload CSV File")
+
+    def clean_file(self):
+        uploaded = self.cleaned_data.get('file')
+        if uploaded:
+            if not uploaded.name.lower().endswith('.csv'):
+                raise forms.ValidationError('Only CSV files are accepted.')
+            # 5 MB limit
+            if uploaded.size > 5 * 1024 * 1024:
+                raise forms.ValidationError('File size must be under 5 MB.')
+        return uploaded

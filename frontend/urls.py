@@ -34,6 +34,7 @@ urlpatterns = [
     
     # Courses
     path('courses/', views.course_list, name='course_list'),
+    path('courses/my/', views.my_courses, name='my_courses'),
     path('courses/create/', views.course_create, name='course_create'),
     path('courses/<int:pk>/', views.course_detail, name='course_detail'),
     path('courses/<int:pk>/edit/', views.course_edit, name='course_edit'),
@@ -46,6 +47,8 @@ urlpatterns = [
     path('attendance/history/', views.attendance_history, name='attendance_history'),
     path('attendance/mark/', views.attendance_mark, name='attendance_mark'),
     path('attendance/<int:pk>/', views.attendance_detail, name='attendance_detail'),
+    path('attendance/<int:attendance_id>/export/', views.export_attendance_csv, name='export_attendance_csv'),
+    path('attendance/<int:attendance_id>/mark-present/<int:student_id>/', views.manual_mark_present, name='manual_mark_present'),
     path('attendance/end/', views.end_attendance, name='end_attendance'),
     
     # Reports

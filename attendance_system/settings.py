@@ -24,10 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-local-dev-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 # Allowed hosts
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
 # CSRF Trusted Origins for production (Render)
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -167,15 +167,18 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# GIS and other settings
-GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH', 'C:\\GDAL\\bin\\gdal304.dll')
-
+# Authentication Backends
 AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
     'attendance.authentication_backends.EmailBackend',
     'attendance.authentication_backends.StudentBackend',
     'attendance.authentication_backends.StaffBackend',
-    'django.contrib.auth.backends.ModelBackend',  # Default backend
 )
+
+# GIS and other settings
+GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH', 'C:\\GDAL\\bin\\gdal304.dll')
+
+
 
 # Swagger settings for API documentation
 SWAGGER_SETTINGS = {
@@ -191,13 +194,12 @@ SWAGGER_SETTINGS = {
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for development
-
-# For production, use specific origins:
-# CORS_ALLOWED_ORIGINS = [
-#     "https://attendance-system-6a30.onrender.com",
-#     "https://your-frontend-app.com",
-# ]
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+    # Example: CORS_ALLOWED_ORIGINS="https://attendance-system-6a30.onrender.com,https://your-frontend-app.com"
 
 # Media files (uploaded images)
 MEDIA_URL = '/media/'

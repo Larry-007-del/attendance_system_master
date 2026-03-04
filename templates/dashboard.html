@@ -7,12 +7,40 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    {% if is_student %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center" 
+         x-data="{ circumference: 2 * Math.PI * 40, percent: {{ attendance_rate|default:0 }} }"
+         x-init="setTimeout(() => $el.style.setProperty('--progress', circumference - (percent / 100) * circumference), 100)">
+        
+        <h3 class="text-sm font-medium text-gray-500 mb-4 tracking-wide uppercase">Attendance Rate</h3>
+        
+        <div class="relative flex items-center justify-center">
+            <svg class="transform -rotate-90 w-32 h-32">
+                <circle cx="64" cy="64" r="40" stroke="currentColor" stroke-width="8" fill="transparent" class="text-gray-100" />
+                <circle cx="64" cy="64" r="40" stroke="currentColor" stroke-width="8" fill="transparent" 
+                        :stroke-dasharray="circumference"
+                        :stroke-dashoffset="circumference"
+                        class="text-indigo-600 transition-all duration-1000 ease-out"
+                        style="stroke-dashoffset: var(--progress, 251.2);" />
+            </svg>
+            <div class="absolute flex flex-col items-center">
+                <span class="text-2xl font-bold text-gray-800" x-text="`${percent}%`"></span>
+            </div>
+        </div>
+        
+        <p class="mt-4 text-xs text-center text-gray-500">
+            <span class="inline-block w-2 h-2 rounded-full bg-indigo-500 mr-1"></span>
+            On track for exams
+        </p>
+    </div>
+    {% else %}
     <div class="p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
         <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            {% if is_student %} {{ attendance_rate }}% {% else %} -- {% endif %}
+            --
         </h5>
         <p class="font-normal text-gray-700 dark:text-gray-400">Attendance Rate</p>
     </div>
+    {% endif %}
     
     <div class="p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
         <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">

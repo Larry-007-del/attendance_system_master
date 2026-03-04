@@ -14,7 +14,7 @@ from openpyxl import Workbook
 from django.utils.dateparse import parse_date
 from collections import defaultdict
 
-from .models import Lecturer, Student, Course, Attendance, AttendanceToken
+from .models import Lecturer, Student, Course, Attendance, AttendanceToken, AttendanceStudent
 from .serializers import (
     LecturerSerializer,
     StudentSerializer,
@@ -27,14 +27,14 @@ from .serializers import (
 
 # Lecturer ViewSet
 class LecturerViewSet(viewsets.ModelViewSet):
-    queryset = Lecturer.objects.all()
+    queryset = Lecturer.objects.select_related('user').all()
     serializer_class = LecturerSerializer
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'], url_path='my-courses')
     def my_courses(self, request):
         lecturer = get_object_or_404(Lecturer, user=request.user)
-        courses = Course.objects.filter(lecturer=lecturer)
+        courses = Course.objects.select_related('lecturer', 'lecturer__user').prefetch_related('students', 'students__user').filter(lecturer=lecturer)
         serializer = CourseSerializer(courses, many=True)
         return Response(serializer.data)
 
@@ -47,15 +47,15 @@ class StudentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         # Lecturers can see all students
         if hasattr(user, 'lecturer'):
-            return Student.objects.all()
+            return Student.objects.select_related('user').all()
         # Students can only see themselves
         elif hasattr(user, 'student'):
-            return Student.objects.filter(user=user)
+            return Student.objects.select_related('user').filter(user=user)
         return Student.objects.none()
 
 # Course ViewSet
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all()
+    queryset = Course.objects.select_related('lecturer', 'lecturer__user').prefetch_related('students', 'students__user').all()
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
 
@@ -73,7 +73,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         # We use get_or_create to prevent duplicates if the button is clicked twice
         attendance, created = Attendance.objects.get_or_create(
             course=course,
-            date=timezone.now().date(),
+            date=timezone.localdate(),
             defaults={
                 'lecturer_latitude': latitude,
                 'lecturer_longitude': longitude,
@@ -89,24 +89,28 @@ class CourseViewSet(viewsets.ModelViewSet):
             attendance.is_active = True
             attendance.save()
 
-        # Now create the token
+        # Now create the token — expiry matches the attendance session duration
         AttendanceToken.objects.create(
             course=course,
             token=token_value,
             generated_at=timezone.now(),
-            expires_at=timezone.now() + timezone.timedelta(hours=4), # Auto-expire in 4 hours
+            expires_at=timezone.now() + timezone.timedelta(hours=attendance.duration_hours),
             is_active=True
         )
 
-        # Optional: Update the lecturer's profile location
-        if hasattr(course.lecturer, 'lecturer_profile'):
-             course.lecturer.lecturer_profile.latitude = latitude
-             course.lecturer.lecturer_profile.longitude = longitude
-             course.lecturer.lecturer_profile.save()
+        # Update the lecturer's stored location
+        course.lecturer.latitude = latitude
+        course.lecturer.longitude = longitude
+        course.lecturer.save(update_fields=['latitude', 'longitude'])
 
-        # Send notifications to students
-        from .notification_service import send_attendance_started_notifications
-        send_attendance_started_notifications(attendance, token_value)
+        # Send notifications to students (asynchronously)
+        from .tasks import send_attendance_started_notifications
+        import threading
+        threading.Thread(
+            target=send_attendance_started_notifications,
+            args=[attendance, token_value],
+            daemon=True
+        ).start()
 
         # Schedule expiration reminder (15 minutes before expiry)
         from .tasks import schedule_attendance_expiration_reminder
@@ -131,7 +135,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
             attendance, created = Attendance.objects.get_or_create(
                 course=course,
-                date=timezone.now().date()
+                date=timezone.localdate()
             )
             attendance.present_students.add(student)
             attendance.save()
@@ -143,7 +147,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         
 # Attendance ViewSet
 class AttendanceViewSet(viewsets.ModelViewSet):
-    queryset = Attendance.objects.all()
+    queryset = Attendance.objects.select_related('course', 'course__lecturer', 'course__lecturer__user').prefetch_related('present_students', 'present_students__user', 'course__students', 'course__students__user').all()
     serializer_class = AttendanceSerializer
     permission_classes = [IsAuthenticated]
 
@@ -164,12 +168,22 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         # Add header row
         worksheet.append(['Student ID', 'Student Name', 'Date of Attendance', 'Status'])
 
-        # Collect present students
-        present_students = [(student.student_id, student.name) for student in attendance.present_students.all()]
+        # Style headers
+        from openpyxl.styles import Font, PatternFill
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+
+        for cell in worksheet["1:1"]:
+            cell.font = header_font
+            cell.fill = header_fill
+
+        # Collect present students (single query)
+        present_set = set(attendance.present_students.all())
+        present_students = [(s.student_id, s.name) for s in present_set]
 
         # Collect missed students
         course_students = list(attendance.course.students.all())
-        missed_students = [(student.student_id, student.name) for student in course_students if student not in attendance.present_students.all()]
+        missed_students = [(s.student_id, s.name) for s in course_students if s not in present_set]
 
         # Write present students
         for student_id, student_name in sorted(present_students):
@@ -178,6 +192,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         # Write absent students
         for student_id, student_name in sorted(missed_students):
             worksheet.append([student_id, student_name, attendance.date, 'Absent'])
+
+        # Auto-adjust column widths
+        worksheet.column_dimensions['B'].width = 25  # Name
+        worksheet.column_dimensions['C'].width = 18  # Date
 
         # Create an HTTP response with the Excel file
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -192,7 +210,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         from django.http import HttpResponse
         import csv
         
-        course = Course.objects.get(id=course_id)
+        course = get_object_or_404(Course, id=course_id)
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{course.course_code}_attendance.csv"'
 
@@ -200,15 +218,17 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         # Header Row
         writer.writerow(['Date', 'Student ID', 'Student Name', 'Status', 'Time Marked'])
 
-        # Data Rows
-        attendances = Attendance.objects.filter(course=course).select_related('student', 'student__user')
-        for att in attendances:
+        # Data Rows — use AttendanceStudent for per-student records with timestamps
+        attendance_students = AttendanceStudent.objects.filter(
+            attendance__course=course
+        ).select_related('student', 'student__user', 'attendance')
+        for record in attendance_students:
             writer.writerow([
-                att.created_at.date() if att.created_at else '',
-                att.student.student_id if att.student else '',
-                f"{att.student.user.first_name} {att.student.user.last_name}" if att.student and att.student.user else '',
+                record.attendance.date,
+                record.student.student_id,
+                record.student.name,
                 'Present',
-                att.created_at.strftime("%H:%M:%S") if att.created_at else '',
+                record.marked_at.strftime("%H:%M:%S") if record.marked_at else '',
             ])
 
         return response
@@ -238,7 +258,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
 # AttendanceToken ViewSet
 class AttendanceTokenViewSet(viewsets.ModelViewSet):
-    queryset = AttendanceToken.objects.all()
+    queryset = AttendanceToken.objects.select_related('course', 'course__lecturer', 'course__lecturer__user').all()
     serializer_class = AttendanceTokenSerializer
     permission_classes = [IsAuthenticated]
 
@@ -250,7 +270,7 @@ class StudentEnrolledCoursesView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         student = get_object_or_404(Student, user=user)
-        return Course.objects.filter(students=student)
+        return Course.objects.select_related('lecturer', 'lecturer__user').prefetch_related('students', 'students__user').filter(students=student)
 
 # Custom Login Views
 class StudentLoginView(ObtainAuthToken):
@@ -328,7 +348,7 @@ class SubmitLocationView(generics.GenericAPIView):
         except AttendanceToken.DoesNotExist:
             return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
 
-        attendance = Attendance.objects.filter(course=token.course, date=timezone.now().date()).first()
+        attendance = Attendance.objects.filter(course=token.course, date=timezone.localdate()).first()
 
         if not attendance or not attendance.is_session_valid:
             return Response(
@@ -350,6 +370,8 @@ class SubmitLocationView(generics.GenericAPIView):
                             'longitude': longitude
                         }
                     )
+                    # CRITICAL FIX: Add student to present_students M2M field
+                    attendance.present_students.add(student)
                     return Response({'status': 'Attendance marked successfully'}, status=status.HTTP_200_OK)
             return Response({'error': 'Student not enrolled in this course'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -370,7 +392,7 @@ class StudentAttendanceHistoryView(generics.GenericAPIView):
         # Retrieve attendance records where the student was present
         attendance_records = Attendance.objects.filter(
             present_students=student
-        ).order_by('-date')
+        ).select_related('course').order_by('-date')
 
         # Categorize records by course code and order by date descending within each course
         categorized_records = defaultdict(list)
@@ -398,7 +420,7 @@ class LecturerAttendanceHistoryView(generics.GenericAPIView):
         # Retrieve attendance records for courses taught by the lecturer
         attendance_records = Attendance.objects.filter(
             course__lecturer=lecturer
-        ).order_by('-date')
+        ).select_related('course').order_by('-date')
 
         # Categorize records by course code and order by date descending within each course
         categorized_records = defaultdict(list)

@@ -6,6 +6,7 @@
     <title>Register - Attendance System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gradient-to-br from-indigo-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
     
@@ -41,19 +42,25 @@
                 </div>
                 
                 <!-- Password -->
-                <div>
+                <div x-data="{ show: false }" class="relative">
                     <label for="password1" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" name="password1" id="password1" required
+                    <input :type="show ? 'text' : 'password'" name="password1" id="password1" required
                            class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                            placeholder="Create a password">
+                    <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
+                        <span x-text="show ? 'Hide' : 'Show'"></span>
+                    </button>
                 </div>
                 
                 <!-- Confirm Password -->
-                <div>
+                <div x-data="{ show: false }" class="relative">
                     <label for="password2" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                    <input type="password" name="password2" id="password2" required
+                    <input :type="show ? 'text' : 'password'" name="password2" id="password2" required
                            class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                            placeholder="Confirm your password">
+                    <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
+                        <span x-text="show ? 'Hide' : 'Show'"></span>
+                    </button>
                 </div>
                 
                 <!-- Role Selection -->
