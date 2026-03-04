@@ -61,7 +61,7 @@ def dashboard(request):
     context = {
         'role_label': 'User',
         'attendance_rate': 0,
-        'next_class': 'No classes scheduled',
+        'next_class': 'No upcoming sessions',
         'is_student': False,
         'is_lecturer': False,
         'is_admin': request.user.is_superuser,
@@ -70,26 +70,57 @@ def dashboard(request):
     # Safely determine user role
     if request.user.is_superuser:
         context['role_label'] = 'Administrator'
+        # Admin stats
+        context['total_students'] = Student.objects.count()
+        context['total_lecturers'] = Lecturer.objects.count()
+        context['total_courses'] = Course.objects.count()
+        context['active_sessions'] = Attendance.objects.filter(is_active=True, date=timezone.localdate()).count()
     elif hasattr(request.user, 'lecturer'):
         try:
             if request.user.lecturer:
+                lecturer = request.user.lecturer
                 context['is_lecturer'] = True
                 context['role_label'] = 'Lecturer'
-                # Get courses taught by lecturer with enrollment count
-                context['taught_courses'] = Course.objects.filter(lecturer=request.user.lecturer).annotate(
+                taught_courses = Course.objects.filter(lecturer=lecturer).annotate(
                     enrolled_count=Count('students')
                 )
+                context['taught_courses'] = taught_courses
+
+                # Compute lecturer stats
+                context['total_sessions'] = Attendance.objects.filter(course__lecturer=lecturer).count()
+                active_session = Attendance.objects.filter(
+                    course__lecturer=lecturer, is_active=True, date=timezone.localdate()
+                ).select_related('course').first()
+                if active_session:
+                    context['next_class'] = f"{active_session.course.name} (Live now)"
+                else:
+                    context['next_class'] = f"{taught_courses.count()} course{'s' if taught_courses.count() != 1 else ''} assigned"
         except Lecturer.DoesNotExist:
             pass
     elif hasattr(request.user, 'student'):
         try:
             if request.user.student:
+                student = request.user.student
                 context['is_student'] = True
                 context['role_label'] = 'Student'
-                # Get attendance rate with fallback
-                context['attendance_rate'] = getattr(request.user.student, 'attendance_rate', 0)
-                # Get enrolled courses with lecturer information
-                context['enrolled_courses'] = Course.objects.filter(students=request.user.student).select_related('lecturer')
+
+                enrolled_courses = Course.objects.filter(students=student).select_related('lecturer')
+                context['enrolled_courses'] = enrolled_courses
+
+                # Compute real attendance rate
+                total_sessions = Attendance.objects.filter(course__students=student).distinct().count()
+                attended_sessions = Attendance.objects.filter(present_students=student).distinct().count()
+                if total_sessions > 0:
+                    context['attendance_rate'] = round((attended_sessions / total_sessions) * 100)
+                else:
+                    context['attendance_rate'] = 0
+
+                # Find next active session the student can join
+                active_session = Attendance.objects.filter(
+                    course__students=student, is_active=True, date=timezone.localdate()
+                ).select_related('course').first()
+                if active_session:
+                    context['next_class'] = f"{active_session.course.name} (Live now)"
         except Student.DoesNotExist:
             pass
 
@@ -100,6 +131,77 @@ def dashboard(request):
 def checkin_view(request):
     """Check-in page with GPS pulsing button"""
     return render(request, 'frontend/checkin.html')
+
+
+@login_required
+def profile_view(request):
+    """View and edit user profile for students and lecturers"""
+    user = request.user
+    profile = None
+    profile_type = None
+
+    if hasattr(user, 'lecturer'):
+        profile = user.lecturer
+        profile_type = 'lecturer'
+    elif hasattr(user, 'student'):
+        profile = user.student
+        profile_type = 'student'
+
+    if request.method == 'POST' and profile:
+        # Update common user fields
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+
+        if email and email != user.email:
+            if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+                messages.error(request, 'That email is already in use.')
+                return redirect('frontend:profile')
+
+        user.first_name = first_name
+        user.last_name = last_name
+        if email:
+            user.email = email
+        user.save()
+
+        # Update profile-specific fields
+        profile.name = request.POST.get('name', profile.name)
+        profile.phone_number = request.POST.get('phone_number', profile.phone_number)
+
+        if profile_type == 'student':
+            profile.programme_of_study = request.POST.get('programme_of_study', profile.programme_of_study)
+            profile.year = request.POST.get('year', profile.year)
+            profile.notification_preference = request.POST.get('notification_preference', profile.notification_preference)
+            profile.is_notifications_enabled = request.POST.get('is_notifications_enabled') == 'on'
+        elif profile_type == 'lecturer':
+            profile.department = request.POST.get('department', profile.department)
+
+        profile.save()
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('frontend:profile')
+
+    # Compute stats for display
+    stats = {}
+    if profile_type == 'student':
+        total = Attendance.objects.filter(course__students=profile).distinct().count()
+        attended = Attendance.objects.filter(present_students=profile).distinct().count()
+        stats['total_sessions'] = total
+        stats['attended_sessions'] = attended
+        stats['attendance_rate'] = round((attended / total) * 100) if total > 0 else 0
+        stats['enrolled_courses'] = Course.objects.filter(students=profile).count()
+    elif profile_type == 'lecturer':
+        stats['total_sessions'] = Attendance.objects.filter(course__lecturer=profile).count()
+        stats['total_courses'] = Course.objects.filter(lecturer=profile).count()
+        stats['total_students'] = Student.objects.filter(
+            enrolled_courses__lecturer=profile
+        ).distinct().count()
+
+    context = {
+        'profile': profile,
+        'profile_type': profile_type,
+        'stats': stats,
+    }
+    return render(request, 'frontend/profile.html', context)
 
 
 @login_required

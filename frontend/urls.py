@@ -51,6 +51,9 @@ urlpatterns = [
     path('attendance/<int:attendance_id>/mark-present/<int:student_id>/', views.manual_mark_present, name='manual_mark_present'),
     path('attendance/end/', views.end_attendance, name='end_attendance'),
     
+    # Profile
+    path('profile/', views.profile_view, name='profile'),
+    
     # Reports
     path('reports/', views.reports_index, name='reports_index'),
     path('reports/export/', views.reports_export, name='reports_export'),
