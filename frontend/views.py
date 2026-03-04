@@ -666,46 +666,40 @@ def ajax_search_students(request):
 @login_required
 def my_courses(request):
     """List courses for the current user (enrolled for students, taught for lecturers)"""
-    import logging
-    logger = logging.getLogger(__name__)
-    try:
-        if hasattr(request.user, 'student'):
-            # Student: show enrolled courses
-            student = request.user.student
-            courses = Course.objects.filter(students=student).select_related('lecturer').annotate(
-                enrolled_count=Count('students')
-            )
-            context = {
-                'courses': courses,
-                'is_student': True,
-                'page_title': 'My Enrolled Courses'
-            }
-        elif hasattr(request.user, 'lecturer'):
-            # Lecturer: show taught courses
-            lecturer = request.user.lecturer
-            courses = Course.objects.filter(lecturer=lecturer).select_related('lecturer').annotate(
-                enrolled_count=Count('students')
-            )
-            context = {
-                'courses': courses,
-                'is_student': False,
-                'page_title': 'Courses I Teach'
-            }
-        else:
-            # Other users: show all courses (admin)
-            courses = Course.objects.all().select_related('lecturer').annotate(
-                enrolled_count=Count('students')
-            )
-            context = {
-                'courses': courses,
-                'is_student': False,
-                'page_title': 'All Courses'
-            }
-        
-        return render(request, 'courses/my_courses.html', context)
-    except Exception as e:
-        logger.error(f"my_courses view error for user {request.user}: {e}", exc_info=True)
-        raise
+    if hasattr(request.user, 'student'):
+        # Student: show enrolled courses
+        student = request.user.student
+        courses = Course.objects.filter(students=student).select_related('lecturer').annotate(
+            enrolled_count=Count('students')
+        )
+        context = {
+            'courses': courses,
+            'is_student': True,
+            'page_title': 'My Enrolled Courses'
+        }
+    elif hasattr(request.user, 'lecturer'):
+        # Lecturer: show taught courses
+        lecturer = request.user.lecturer
+        courses = Course.objects.filter(lecturer=lecturer).select_related('lecturer').annotate(
+            enrolled_count=Count('students')
+        )
+        context = {
+            'courses': courses,
+            'is_student': False,
+            'page_title': 'Courses I Teach'
+        }
+    else:
+        # Other users: show all courses (admin)
+        courses = Course.objects.all().select_related('lecturer').annotate(
+            enrolled_count=Count('students')
+        )
+        context = {
+            'courses': courses,
+            'is_student': False,
+            'page_title': 'All Courses'
+        }
+    
+    return render(request, 'courses/my_courses.html', context)
 
 @login_required
 def course_list(request):
