@@ -197,8 +197,13 @@ SWAGGER_SETTINGS = {
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+    _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip() for origin in _cors_origins_env.split(',')
+        if origin.strip() and '.' in origin.strip()  # Must be non-empty and look like a URL
+    ]
+    # If no valid origins are configured, allow all (monolith serves its own frontend)
+    CORS_ALLOW_ALL_ORIGINS = len(CORS_ALLOWED_ORIGINS) == 0
     # Example: CORS_ALLOWED_ORIGINS="https://attendance-system-6a30.onrender.com,https://your-frontend-app.com"
 
 # Media files (uploaded images)
