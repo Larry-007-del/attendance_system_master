@@ -3,9 +3,17 @@ module.exports = {
   content: [
     "./templates/**/*.{html,js}",
     "./static/**/*.{html,js}",
+    "./node_modules/flowbite/**/*.js",
   ],
+  darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+    },
   },
-  plugins: [],
+  plugins: [
+    require('flowbite/plugin'),
+  ],
 }
