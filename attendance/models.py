@@ -36,6 +36,11 @@ class Lecturer(models.Model):
             if not (-90 <= self.latitude <= 90 and -180 <= self.longitude <= 180):
                 raise ValidationError("Invalid latitude or longitude.")
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['department']),
+        ]
+
     def clean(self):
         self.validate_coordinates()
         super().clean()
@@ -93,6 +98,12 @@ class Course(models.Model):
     is_active = models.BooleanField(default=False)  # Added field
     require_two_factor_auth = models.BooleanField(default=False)  # Course-specific 2FA setting
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['lecturer', 'is_active']),
+            models.Index(fields=['is_active']),
+        ]
+
     def __str__(self):
         return f"{self.name} ({self.course_code})"
 
@@ -106,6 +117,10 @@ class CourseEnrollment(models.Model):
 
     class Meta:
         unique_together = ('course', 'student')
+        indexes = [
+            models.Index(fields=['student']),
+            models.Index(fields=['course']),
+        ]
 
 class AttendanceStudent(models.Model):
     attendance = models.ForeignKey('Attendance', on_delete=models.CASCADE, db_index=True)
@@ -226,6 +241,12 @@ class AttendanceToken(models.Model):
     expires_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     qr_code = models.ImageField(upload_to='qr_codes/', null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['is_active']),
+            models.Index(fields=['course', 'is_active']),
+        ]
 
     def __str__(self):
         return f"{self.course.name} - {self.token}"

@@ -240,14 +240,19 @@ def change_password(request):
 
 @login_required
 def ajax_dashboard_stats(request):
-    """HTMX endpoint for dashboard statistics"""
-    stats = {
-        'total_lecturers': Lecturer.objects.count(),
-        'total_students': Student.objects.count(),
-        'total_courses': Course.objects.count(),
-        'active_courses': Course.objects.filter(is_active=True).count(),
-        'today_attendance': Attendance.objects.filter(date=timezone.localdate()).count(),
-    }
+    """HTMX endpoint for dashboard statistics (cached 60s)"""
+    from django.core.cache import cache
+    cache_key = 'dashboard_stats'
+    stats = cache.get(cache_key)
+    if stats is None:
+        stats = {
+            'total_lecturers': Lecturer.objects.count(),
+            'total_students': Student.objects.count(),
+            'total_courses': Course.objects.count(),
+            'active_courses': Course.objects.filter(is_active=True).count(),
+            'today_attendance': Attendance.objects.filter(date=timezone.localdate()).count(),
+        }
+        cache.set(cache_key, stats, 60)
     return JsonResponse(stats)
 
 
@@ -1061,7 +1066,7 @@ def attendance_mark(request):
             # Check if student is enrolled
             try:
                 student = Student.objects.get(user=request.user)
-                if student not in course.students.all():
+                if not course.students.filter(pk=student.pk).exists():
                     messages.error(request, 'You are not enrolled in this course!')
                     return render(request, 'attendance/mark.html')
                 
@@ -1324,10 +1329,12 @@ def reports_index(request):
     course_stats = []
     for course in courses.select_related('lecturer').prefetch_related('students'):
         enrolled = course.students.count()
-        sessions = attendances.filter(course=course)
+        sessions = attendances.filter(course=course).annotate(
+            present_count=Count('present_students')
+        )
         session_count = sessions.count()
         if session_count > 0 and enrolled > 0:
-            total_marks = sum(s.present_students.count() for s in sessions)
+            total_marks = sum(s.present_count for s in sessions)
             rate = round((total_marks / (session_count * enrolled)) * 100)
         else:
             rate = 0
@@ -1397,11 +1404,11 @@ def reports_export(request):
         ws = wb.active
         ws.append(['Course', 'Date', 'Present Count', 'Active', 'Created At'])
         
-        for att in attendances:
+        for att in attendances.annotate(present_count=Count('present_students')):
             ws.append([
                 att.course.name,
                 str(att.date),
-                att.present_students.count(),
+                att.present_count,
                 'Yes' if att.is_active else 'No',
                 str(att.created_at),
             ])
@@ -1419,11 +1426,11 @@ def reports_export(request):
         writer = csv.writer(response)
         writer.writerow(['Course', 'Date', 'Present Count', 'Active', 'Created At'])
         
-        for att in attendances:
+        for att in attendances.annotate(present_count=Count('present_students')):
             writer.writerow([
                 att.course.name,
                 att.date,
-                att.present_students.count(),
+                att.present_count,
                 'Yes' if att.is_active else 'No',
                 att.created_at,
             ])

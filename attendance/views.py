@@ -360,7 +360,7 @@ class SubmitLocationView(generics.GenericAPIView):
             user = request.user
             if hasattr(user, 'student'):
                 student = user.student
-                if student in token.course.students.all():
+                if token.course.students.filter(pk=student.pk).exists():
                     # Add student to attendance with location coordinates
                     AttendanceStudent.objects.get_or_create(
                         attendance=attendance,

@@ -150,6 +150,15 @@ WHITENOISE_MANIFEST_STRICT = False
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'attendance-cache',
+        'TIMEOUT': 300,  # 5 minutes default
+    }
+}
+
 
 # Django REST Framework settings
 REST_FRAMEWORK = {
