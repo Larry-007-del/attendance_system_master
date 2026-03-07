@@ -291,7 +291,7 @@ class AttendanceModelTest(TestCase):
         self.attendance.lecturer_latitude = None
         self.attendance.lecturer_longitude = None
         result = self.attendance.is_within_radius(Decimal('5.650000'), Decimal('-0.187000'))
-        self.assertTrue(result)
+        self.assertFalse(result)  # Should deny when lecturer coords are not set
 
     def test_ordering(self):
         yesterday = Attendance.objects.create(

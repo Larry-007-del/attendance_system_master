@@ -79,6 +79,17 @@ class AttendanceTokenSerializer(serializers.ModelSerializer):
         model = AttendanceToken
         fields = ['id', 'course', 'token', 'generated_at', 'expires_at', 'is_active', 'qr_code']
 
+    def to_representation(self, instance):
+        """Hide token value from non-staff users (students)."""
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            user = request.user
+            if not (user.is_superuser or hasattr(user, 'lecturer')):
+                data.pop('token', None)
+                data.pop('qr_code', None)
+        return data
+
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_qr_code(self, obj):
         request = self.context.get('request')

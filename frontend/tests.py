@@ -600,7 +600,7 @@ class CourseViewsTest(FrontendViewsTestCase):
         response = self.client.post(
             reverse('frontend:course_delete', args=[self.course.pk])
         )
-        self.assertRedirects(response, reverse('frontend:course_list'))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
         # Course should still exist
         self.assertTrue(Course.objects.filter(pk=self.course.pk).exists())
 
@@ -785,6 +785,7 @@ class RegisterViewTest(FrontendViewsTestCase):
         self.assertTrue(Student.objects.filter(student_id='NS001').exists())
 
     def test_register_lecturer_success(self):
+        """Lecturer self-registration is blocked — should redirect back to register."""
         response = self.client.post(reverse('frontend:register'), {
             'username': 'newlec',
             'email': 'newlec@example.com',
@@ -795,8 +796,8 @@ class RegisterViewTest(FrontendViewsTestCase):
             'staff_id': 'NL001',
             'department': 'Physics',
         })
-        self.assertRedirects(response, reverse('frontend:login'))
-        self.assertTrue(Lecturer.objects.filter(staff_id='NL001').exists())
+        self.assertRedirects(response, reverse('frontend:register'))
+        self.assertFalse(Lecturer.objects.filter(staff_id='NL001').exists())
 
     def test_register_password_mismatch(self):
         response = self.client.post(reverse('frontend:register'), {

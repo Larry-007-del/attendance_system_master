@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
+from django.utils.http import url_has_allowed_host_and_scheme
 import secrets
 from functools import wraps
 from django.contrib import messages
@@ -67,8 +68,10 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             cache.delete(cache_key)  # Reset on successful login
-            next_url = request.POST.get('next') or 'frontend:dashboard'
-            return redirect(next_url)
+            next_url = request.POST.get('next', '')
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+                return redirect(next_url)
+            return redirect('frontend:dashboard')
         else:
             cache.set(cache_key, attempts + 1, 300)  # 5-minute window
             messages.error(request, "Invalid username or password.")
@@ -254,12 +257,17 @@ def change_password(request):
             messages.error(request, 'Current password is incorrect.')
             return redirect('frontend:change_password')
 
-        if len(new_password) < 8:
-            messages.error(request, 'New password must be at least 8 characters.')
-            return redirect('frontend:change_password')
-
         if new_password != confirm_password:
             messages.error(request, 'New passwords do not match.')
+            return redirect('frontend:change_password')
+
+        # Validate using Django's built-in password validators
+        from django.contrib.auth.password_validation import validate_password
+        try:
+            validate_password(new_password, user=request.user)
+        except ValidationError as e:
+            for error in e.messages:
+                messages.error(request, error)
             return redirect('frontend:change_password')
 
         request.user.set_password(new_password)
@@ -294,9 +302,9 @@ def ajax_dashboard_stats(request):
 
 # ==================== Lecturers ====================
 
-@login_required
+@admin_required
 def lecturer_list(request):
-    """List all lecturers"""
+    """List all lecturers (admin only)"""
     query = request.GET.get('q')
     if query:
         lecturers = Lecturer.objects.select_related('user').filter(
@@ -464,9 +472,9 @@ def ajax_search_lecturers(request):
 
 # ==================== Students ====================
 
-@login_required
+@admin_required
 def student_list(request):
-    """List all students"""
+    """List all students (admin only)"""
     query = request.GET.get('q')
     year_filter = request.GET.get('year')
     programme_filter = request.GET.get('programme')
@@ -742,9 +750,9 @@ def my_courses(request):
     
     return render(request, 'courses/my_courses.html', context)
 
-@login_required
+@staff_required
 def course_list(request):
-    """List all courses"""
+    """List all courses (admin/lecturer only)"""
     query = request.GET.get('q')
     active_filter = request.GET.get('active')
     
@@ -881,7 +889,7 @@ def course_delete(request, pk):
         if request.headers.get('HX-Request'):
             return HttpResponse('Unauthorized', status=403)
         messages.error(request, "You do not have permission to delete this course.")
-        return redirect('frontend:course_list')
+        return redirect('frontend:dashboard')
 
     if request.method == 'POST':
         course.delete()
@@ -910,9 +918,9 @@ def ajax_search_courses(request):
 
 # ==================== Attendance ====================
 
-@login_required
+@staff_required
 def attendance_index(request):
-    """Attendance dashboard"""
+    """Attendance dashboard (admin/lecturer only)"""
     today = timezone.localdate()
     attendances = Attendance.objects.filter(date=today).select_related('course').prefetch_related('present_students')
     active_tokens = AttendanceToken.objects.filter(is_active=True)
@@ -1115,18 +1123,20 @@ def attendance_mark(request):
                 
                 # Check if 2FA is required
                 if attendance.require_two_factor_auth:
+                    # Build 2FA context (needed in both branches)
+                    two_fa_context = {
+                        'token': token,
+                        'course': course,
+                        'latitude': latitude,
+                        'longitude': longitude
+                    }
+                    
                     # Check if student has completed 2FA
                     has_completed_two_factor = request.POST.get('two_factor_completed') == 'on'
                     
                     if not has_completed_two_factor:
                         # Render 2FA challenge page
-                        context = {
-                            'token': token,
-                            'course': course,
-                            'latitude': latitude,
-                            'longitude': longitude
-                        }
-                        return render(request, 'attendance/two_factor_challenge.html', context)
+                        return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
                     else:
                         # Verify 2FA method
                         two_factor_method = request.POST.get('two_factor_method', 'biometric')
@@ -1136,18 +1146,18 @@ def attendance_mark(request):
                             otp_code = request.POST.get('otp_code', '')
                             if len(otp_code) != 6 or not otp_code.isdigit():
                                 messages.error(request, 'Invalid OTP code')
-                                return render(request, 'attendance/two_factor_challenge.html', context)
+                                return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
                             
                             # Check if student has a valid secret key
                             if not hasattr(student.user, 'student') or not student.user.student.two_factor_secret:
                                 messages.error(request, 'Two-factor authentication not properly configured')
-                                return render(request, 'attendance/two_factor_challenge.html', context)
+                                return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
                             
                             # Verify OTP code against the secret key
                             totp = pyotp.TOTP(student.user.student.two_factor_secret)
                             if not totp.verify(otp_code):
                                 messages.error(request, 'Invalid OTP code')
-                                return render(request, 'attendance/two_factor_challenge.html', context)
+                                return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
                 
                 # Parse latitude and longitude
                 try:
@@ -1421,7 +1431,9 @@ def reports_export(request):
     export_format = request.GET.get('format', 'csv')
     
     # Base query - restrict based on user role
-    if hasattr(request.user, 'lecturer'):
+    if request.user.is_superuser:
+        attendances = Attendance.objects.all().select_related('course').prefetch_related('present_students')
+    elif hasattr(request.user, 'lecturer'):
         attendances = Attendance.objects.filter(course__lecturer=request.user.lecturer).select_related('course').prefetch_related('present_students')
     elif hasattr(request.user, 'student'):
         attendances = Attendance.objects.filter(present_students=request.user.student).select_related('course').prefetch_related('present_students')
@@ -1484,9 +1496,9 @@ def register_view(request):
         password2 = request.POST.get('password2')
         role = request.POST.get('role')
         
-        # Validate role
-        if role not in ['lecturer', 'student']:
-            messages.error(request, "Invalid role selected. Please choose either Student or Lecturer.")
+        # Validate role — only students can self-register; lecturers must be created by admin
+        if role != 'student':
+            messages.error(request, "Only student registration is allowed. Lecturer accounts must be created by an administrator.")
             return redirect('frontend:register')
         
         # Validate passwords

@@ -206,7 +206,7 @@ class Attendance(models.Model):
     def is_within_radius(self, student_lat, student_lon, radius_meters=50):
         """Check if student is within radius of lecturer's location"""
         if not self.lecturer_latitude or not self.lecturer_longitude:
-            return True  # Fallback or deny depending on policy
+            return False  # Deny attendance when lecturer location is not set
 
         lecturer_coords = (self.lecturer_latitude, self.lecturer_longitude)
         student_coords = (student_lat, student_lon)

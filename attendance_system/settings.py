@@ -210,8 +210,8 @@ else:
         origin.strip() for origin in _cors_origins_env.split(',')
         if origin.strip() and '.' in origin.strip()  # Must be non-empty and look like a URL
     ]
-    # If no valid origins are configured, allow all (monolith serves its own frontend)
-    CORS_ALLOW_ALL_ORIGINS = len(CORS_ALLOWED_ORIGINS) == 0
+    # If no valid origins are configured, deny all cross-origin requests (monolith serves its own frontend)
+    CORS_ALLOW_ALL_ORIGINS = False
     # Example: CORS_ALLOWED_ORIGINS="https://attendance-system-6a30.onrender.com,https://your-frontend-app.com"
 
 # Media files (uploaded images)

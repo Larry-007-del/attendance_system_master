@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.auth import authenticate, logout
@@ -25,11 +25,31 @@ from .serializers import (
     SubmitLocationSerializer
 )
 
+
+# ==================== Custom Permissions ====================
+
+class IsStaffOrAdmin(BasePermission):
+    """Allow access to lecturers and superusers only."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return request.user.is_superuser or hasattr(request.user, 'lecturer')
+
+
+class IsAdminOrReadOnly(BasePermission):
+    """Allow read access to authenticated staff; write access to admins only."""
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return request.user.is_superuser or hasattr(request.user, 'lecturer')
+        return request.user.is_superuser
+
 # Lecturer ViewSet
 class LecturerViewSet(viewsets.ModelViewSet):
     queryset = Lecturer.objects.select_related('user').all().order_by('name')
     serializer_class = LecturerSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrReadOnly]
 
     @action(detail=False, methods=['get'], url_path='my-courses')
     def my_courses(self, request):
@@ -57,11 +77,17 @@ class StudentViewSet(viewsets.ModelViewSet):
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.select_related('lecturer', 'lecturer__user').prefetch_related('students', 'students__user').all().order_by('name')
     serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsStaffOrAdmin]
 
     @action(detail=True, methods=['post'])
     def generate_attendance_token(self, request, pk=None):
         course = self.get_object()
+        
+        # Ownership check: only the course's lecturer or an admin can generate tokens
+        if not request.user.is_superuser:
+            if not hasattr(request.user, 'lecturer') or course.lecturer != request.user.lecturer:
+                return Response({'error': 'You do not own this course.'}, status=status.HTTP_403_FORBIDDEN)
+        
         token_value = request.data.get('token')
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
@@ -118,8 +144,9 @@ class CourseViewSet(viewsets.ModelViewSet):
 
         return Response({'status': 'Token generated and session started', 'token': token_value})
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def take_attendance(self, request):
+        """Allow any authenticated student to submit attendance via token."""
         token = request.data.get('token')
 
         if not token:
@@ -130,13 +157,18 @@ class CourseViewSet(viewsets.ModelViewSet):
             course = attendance_token.course
             student = get_object_or_404(Student, user=request.user)
 
-            if student not in course.students.all():
+            if not course.students.filter(pk=student.pk).exists():
                 return Response({'error': 'Student is not enrolled in this course.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            attendance, created = Attendance.objects.get_or_create(
+            attendance = Attendance.objects.filter(
                 course=course,
-                date=timezone.localdate()
-            )
+                date=timezone.localdate(),
+                is_active=True
+            ).first()
+            
+            if not attendance or not attendance.is_session_valid:
+                return Response({'error': 'This attendance session has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             attendance.present_students.add(student)
             attendance.save()
 
@@ -149,7 +181,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 class AttendanceViewSet(viewsets.ModelViewSet):
     queryset = Attendance.objects.select_related('course', 'course__lecturer', 'course__lecturer__user').prefetch_related('present_students', 'present_students__user', 'course__students', 'course__students__user').all().order_by('-date')
     serializer_class = AttendanceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsStaffOrAdmin]
 
     @action(detail=False, methods=['get'])
     def generate_excel(self, request):
@@ -245,6 +277,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         except Attendance.DoesNotExist:
             return Response({'error': 'No active attendance found for the course.'}, status=status.HTTP_404_NOT_FOUND)
 
+        # Ownership check: only course lecturer or admin can end a session
+        if not request.user.is_superuser:
+            if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
+                return Response({'error': 'You do not own this course.'}, status=status.HTTP_403_FORBIDDEN)
+
         attendance.is_active = False
         attendance.ended_at = timezone.now()
         attendance.save()
@@ -260,7 +297,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 class AttendanceTokenViewSet(viewsets.ModelViewSet):
     queryset = AttendanceToken.objects.select_related('course', 'course__lecturer', 'course__lecturer__user').all().order_by('-generated_at')
     serializer_class = AttendanceTokenSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsStaffOrAdmin]
 
 # Student Enrolled Courses View
 class StudentEnrolledCoursesView(generics.ListAPIView):
@@ -343,6 +380,13 @@ class SubmitLocationView(generics.GenericAPIView):
         longitude = request.data.get('longitude')
         attendance_token = request.data.get('attendance_token')
 
+        # Validate coordinates
+        try:
+            lat_float = float(latitude)
+            lon_float = float(longitude)
+        except (TypeError, ValueError):
+            return Response({'error': 'Invalid GPS coordinates.'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             token = AttendanceToken.objects.get(token=attendance_token, is_active=True)
         except AttendanceToken.DoesNotExist:
@@ -356,7 +400,7 @@ class SubmitLocationView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if attendance and attendance.is_within_radius(float(latitude), float(longitude)):
+        if attendance.is_within_radius(lat_float, lon_float):
             user = request.user
             if hasattr(user, 'student'):
                 student = user.student
