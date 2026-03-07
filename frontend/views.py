@@ -283,9 +283,9 @@ def change_password(request):
     return render(request, 'frontend/change_password.html')
 
 
-@login_required
+@staff_required
 def ajax_dashboard_stats(request):
-    """HTMX endpoint for dashboard statistics (cached 60s)"""
+    """HTMX endpoint for dashboard statistics — admin/lecturer only (cached 60s)"""
     cache_key = 'dashboard_stats'
     stats = cache.get(cache_key)
     if stats is None:
@@ -844,8 +844,14 @@ def course_detail(request, pk):
 
 @staff_required
 def course_edit(request, pk):
-    """Edit course (admin or lecturer)"""
+    """Edit course (admin or own lecturer only)"""
     course = get_object_or_404(Course, pk=pk)
+    
+    # Ownership check: only admin or the course's own lecturer can edit
+    if not request.user.is_superuser:
+        if not hasattr(request.user, 'lecturer') or course.lecturer != request.user.lecturer:
+            messages.error(request, 'You do not have permission to edit this course.')
+            return redirect('frontend:dashboard')
     
     if request.method == 'POST':
         course.name = request.POST.get('name')
@@ -933,9 +939,9 @@ def attendance_index(request):
     return render(request, 'attendance/index.html', context)
 
 
-@login_required
+@staff_required
 def attendance_take(request):
-    """Take attendance - generate token"""
+    """Take attendance - generate token (lecturer/admin only)"""
     # Get active attendance session if it exists
     active_session = None
     try:
@@ -1115,11 +1121,15 @@ def attendance_mark(request):
                     return render(request, 'attendance/mark.html')
                 
                 # Get attendance session
-                attendance = Attendance.objects.get(
-                    course=course, 
-                    date=timezone.localdate(),
-                    is_active=True
-                )
+                try:
+                    attendance = Attendance.objects.get(
+                        course=course, 
+                        date=timezone.localdate(),
+                        is_active=True
+                    )
+                except Attendance.DoesNotExist:
+                    messages.error(request, 'No active attendance session found for this course today.')
+                    return render(request, 'attendance/mark.html')
                 
                 # Check if 2FA is required
                 if attendance.require_two_factor_auth:
@@ -1159,11 +1169,14 @@ def attendance_mark(request):
                                 messages.error(request, 'Invalid OTP code')
                                 return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
                 
-                # Parse latitude and longitude
+                # Parse latitude and longitude — reject missing coords instead of defaulting
+                if not latitude or not longitude:
+                    messages.error(request, 'Location coordinates are required. Please enable location services.')
+                    return render(request, 'attendance/mark.html')
                 try:
-                    lat_float = float(latitude) if latitude else 0.0
-                    lon_float = float(longitude) if longitude else 0.0
-                except ValueError:
+                    lat_float = float(latitude)
+                    lon_float = float(longitude)
+                except (ValueError, TypeError):
                     messages.error(request, 'Invalid GPS coordinates provided.')
                     return render(request, 'attendance/mark.html')
 
@@ -1200,6 +1213,21 @@ def attendance_detail(request, pk):
     """View attendance session details"""
     attendance = get_object_or_404(Attendance, pk=pk)
     course = attendance.course
+    
+    # Authorization: admin, the course lecturer, or an enrolled student
+    if not request.user.is_superuser:
+        if hasattr(request.user, 'lecturer'):
+            if course.lecturer != request.user.lecturer:
+                messages.error(request, 'You do not have permission to view this session.')
+                return redirect('frontend:dashboard')
+        elif hasattr(request.user, 'student'):
+            if not course.students.filter(pk=request.user.student.pk).exists():
+                messages.error(request, 'You are not enrolled in this course.')
+                return redirect('frontend:dashboard')
+        else:
+            messages.error(request, 'You do not have permission to view this session.')
+            return redirect('frontend:dashboard')
+    
     all_students = course.students.all()
     
     # Get present students with their location information
@@ -1251,9 +1279,10 @@ def export_attendance_csv(request, attendance_id):
     """Export attendance as CSV"""
     attendance = get_object_or_404(Attendance, id=attendance_id)
     
-    # Security check - only lecturer can export
-    if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
-        return HttpResponse("Unauthorized", status=403)
+    # Security check - only the course lecturer or admin can export
+    if not request.user.is_superuser:
+        if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
+            return HttpResponse("Unauthorized", status=403)
 
     # Create the CSV response
     filename = f"attendance_{attendance.course.course_code}_{attendance.date}.csv"
@@ -1285,9 +1314,10 @@ def manual_mark_present(request, attendance_id, student_id):
     """Manually mark a student as present"""
     attendance = get_object_or_404(Attendance, id=attendance_id)
     
-    # Security check: Only lecturers can manually mark attendance
-    if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
-        return HttpResponse("Unauthorized", status=403)
+    # Security check: Only the course lecturer or admin can manually mark attendance
+    if not request.user.is_superuser:
+        if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
+            return HttpResponse("Unauthorized", status=403)
         
     student = get_object_or_404(Student, id=student_id)
     
@@ -1305,7 +1335,9 @@ def attendance_history(request):
     date_to = request.GET.get('date_to')
     
     # Base query - restrict based on user role
-    if hasattr(request.user, 'lecturer'):
+    if request.user.is_superuser:
+        attendances = Attendance.objects.all().select_related('course').prefetch_related('present_students')
+    elif hasattr(request.user, 'lecturer'):
         attendances = Attendance.objects.filter(course__lecturer=request.user.lecturer).select_related('course').prefetch_related('present_students')
     elif hasattr(request.user, 'student'):
         attendances = Attendance.objects.filter(present_students=request.user.student).select_related('course').prefetch_related('present_students')
@@ -1533,16 +1565,8 @@ def register_view(request):
                     password=password1
                 )
                 
-                # Create profile based on role
-                if role == 'lecturer':
-                    Lecturer.objects.create(
-                        user=user,
-                        staff_id=request.POST.get('staff_id'),
-                        name=request.POST.get('name'),
-                        department=request.POST.get('department'),
-                        phone_number=request.POST.get('phone_number')
-                    )
-                elif role == 'student':
+                # Create student profile (lecturer path is unreachable — blocked above)
+                if role == 'student':
                     Student.objects.create(
                         user=user,
                         student_id=request.POST.get('student_id'),

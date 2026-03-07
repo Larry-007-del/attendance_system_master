@@ -784,3 +784,81 @@ class SubmitLocationSerializerTest(TestCase):
         self.assertIn('latitude', serializer.errors)
         self.assertIn('longitude', serializer.errors)
         self.assertIn('attendance_token', serializer.errors)
+
+
+class APIPermissionTest(TestCase):
+    """Tests for role-based API permissions"""
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username='apiAdmin', password='testpassword123', email='apiadmin@example.com'
+        )
+        self.student_user = User.objects.create_user(
+            username='apiStudent', password='testpassword123'
+        )
+        self.lecturer_user = User.objects.create_user(
+            username='apiLecturer', password='testpassword123'
+        )
+        self.student = Student.objects.create(
+            user=self.student_user, student_id='AP001', name='API Student'
+        )
+        self.lecturer = Lecturer.objects.create(
+            user=self.lecturer_user, staff_id='APL01', name='API Lecturer', department='CS'
+        )
+        self.course = Course.objects.create(
+            name='API Course', course_code='API101', lecturer=self.lecturer
+        )
+        self.course.students.add(self.student)
+
+    def test_student_cannot_list_lecturers(self):
+        from rest_framework.authtoken.models import Token
+        token = Token.objects.create(user=self.student_user)
+        response = self.client.get(
+            '/api/lecturers/', HTTP_AUTHORIZATION=f'Token {token.key}'
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_lecturer_can_list_lecturers(self):
+        from rest_framework.authtoken.models import Token
+        token = Token.objects.create(user=self.lecturer_user)
+        response = self.client.get(
+            '/api/lecturers/', HTTP_AUTHORIZATION=f'Token {token.key}'
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_student_cannot_create_course_via_api(self):
+        from rest_framework.authtoken.models import Token
+        token = Token.objects.create(user=self.student_user)
+        response = self.client.post(
+            '/api/courses/', {'name': 'Hack', 'course_code': 'HCK'},
+            HTTP_AUTHORIZATION=f'Token {token.key}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_generate_token_blocked_for_non_owner(self):
+        from rest_framework.authtoken.models import Token
+        other_user = User.objects.create_user(username='otherLec', password='testpassword123')
+        Lecturer.objects.create(
+            user=other_user, staff_id='OL01', name='Other', department='CS'
+        )
+        token = Token.objects.create(user=other_user)
+        response = self.client.post(
+            f'/api/courses/{self.course.pk}/generate_attendance_token/',
+            {'token': 'ABCDEF', 'latitude': '5.65', 'longitude': '-0.187'},
+            HTTP_AUTHORIZATION=f'Token {token.key}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_submit_location_invalid_coords(self):
+        """SubmitLocationView should reject non-numeric coordinates."""
+        from rest_framework.authtoken.models import Token
+        token = Token.objects.create(user=self.student_user)
+        response = self.client.post(
+            '/api/submit-location/',
+            {'latitude': 'invalid', 'longitude': 'bad', 'attendance_token': 'ABC123'},
+            HTTP_AUTHORIZATION=f'Token {token.key}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)

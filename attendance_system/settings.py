@@ -26,8 +26,8 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-local-dev-key-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-# Allowed hosts
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
+# Allowed hosts — default to localhost in dev; MUST be set via env var in production
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # CSRF Trusted Origins for production (Render)
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -144,7 +144,16 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# Use STORAGES (Django 4.2+) instead of deprecated STATICFILES_STORAGE/DEFAULT_FILE_STORAGE
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 # Fix for WhiteNoise - Ignore missing files in CSS (prevents Jazzmin error)
 WHITENOISE_MANIFEST_STRICT = False
@@ -153,14 +162,14 @@ WHITENOISE_MANIFEST_STRICT = False
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Cache Configuration (use DATABASE cache in production for multi-worker support)
+# Cache Configuration (file-based by default for multi-worker Gunicorn safety)
 CACHES = {
     'default': {
         'BACKEND': os.environ.get(
             'CACHE_BACKEND',
-            'django.core.cache.backends.locmem.LocMemCache'
+            'django.core.cache.backends.filebased.FileBasedCache'
         ),
-        'LOCATION': os.environ.get('CACHE_LOCATION', 'attendance-cache'),
+        'LOCATION': os.environ.get('CACHE_LOCATION', os.path.join(BASE_DIR, '.cache')),
         'TIMEOUT': 300,  # 5 minutes default
     }
 }
@@ -225,8 +234,7 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
 }
 
-# Use Cloudinary for media file storage (falls back to local storage if not configured)
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Cloudinary is configured via STORAGES above
 
 # HTMX settings
 HTMX_ENABLED = True

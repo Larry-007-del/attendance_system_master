@@ -17,7 +17,11 @@ services:
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_ALLOWED_HOSTS
-        value: "*"
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: attendance-db
+          property: connectionString
       - key: GDAL_LIBRARY_PATH
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
@@ -28,3 +32,7 @@ services:
         sync: false
       - key: DJANGO_SUPERUSER_EMAIL
         sync: false
+
+databases:
+  - name: attendance-db
+    plan: free

@@ -63,6 +63,12 @@ class StudentViewSet(viewsets.ModelViewSet):
     serializer_class = StudentSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        """Students can read; only admins can create/update/delete."""
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsAdminOrReadOnly()]
+        return super().get_permissions()
+
     def get_queryset(self):
         user = self.request.user
         # Lecturers can see all students
@@ -286,6 +292,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         attendance.ended_at = timezone.now()
         attendance.save()
         
+        # Deactivate any active tokens for this course
+        AttendanceToken.objects.filter(course_id=course_id, is_active=True).update(is_active=False)
+        
         # Send notifications to students who missed the session
         from .tasks import send_missed_attendance_notifications
         send_missed_attendance_notifications(attendance)
@@ -488,7 +497,19 @@ class LecturerLocationView(APIView):
 
         try:
             token = AttendanceToken.objects.get(token=token_value, is_active=True)
-            lecturer = token.course.lecturer
+            course = token.course
+            lecturer = course.lecturer
+
+            # Only enrolled students or the course lecturer should access this
+            if not request.user.is_superuser:
+                if hasattr(request.user, 'student'):
+                    if not course.students.filter(pk=request.user.student.pk).exists():
+                        return Response({'error': 'Not enrolled in this course.'}, status=status.HTTP_403_FORBIDDEN)
+                elif hasattr(request.user, 'lecturer'):
+                    if request.user.lecturer != lecturer:
+                        return Response({'error': 'Not your course.'}, status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response({'error': 'Unauthorized.'}, status=status.HTTP_403_FORBIDDEN)
 
             if lecturer.latitude is None or lecturer.longitude is None:
                 return Response({'error': 'Lecturer coordinates not set.'}, status=status.HTTP_400_BAD_REQUEST)

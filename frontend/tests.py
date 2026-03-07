@@ -988,6 +988,104 @@ class LoginRateLimitTest(FrontendViewsTestCase):
         self.assertEqual(response.status_code, 302)  # Redirect = success
 
 
+class DeepSecurityTest(FrontendViewsTestCase):
+    """Tests for the deep security hardening round"""
+
+    def test_student_cannot_access_attendance_take(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:attendance_take'))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_student_cannot_access_attendance_index(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:attendance_index'))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_student_cannot_access_course_list(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:course_list'))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_student_cannot_access_lecturer_list(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:lecturer_list'))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_student_cannot_access_student_list(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:student_list'))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_attendance_detail_blocks_non_enrolled_student(self):
+        # Create a course with no enrolled students
+        other_course = Course.objects.create(
+            name='Other Course', course_code='OC001', lecturer=self.lecturer
+        )
+        attendance = Attendance.objects.create(
+            course=other_course, date=timezone.localdate(), is_active=True
+        )
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:attendance_detail', args=[attendance.pk]))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_attendance_detail_allows_enrolled_student(self):
+        attendance = Attendance.objects.create(
+            course=self.course, date=timezone.localdate(), is_active=True
+        )
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:attendance_detail', args=[attendance.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_course_edit_blocks_non_owner_lecturer(self):
+        # Create another lecturer
+        other_user = User.objects.create_user(
+            username='other_lecturer', password='testpassword123'
+        )
+        Lecturer.objects.create(
+            user=other_user, staff_id='L999', name='Other Lec', department='Math'
+        )
+        self.client.login(username='other_lecturer', password='testpassword123')
+        response = self.client.get(reverse('frontend:course_edit', args=[self.course.pk]))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_attendance_history_admin_sees_records(self):
+        Attendance.objects.create(
+            course=self.course, date=timezone.localdate(), is_active=True
+        )
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.get(reverse('frontend:attendance_history'))
+        self.assertEqual(response.status_code, 200)
+        # Admin should see all records (not empty)
+        attendances = response.context['attendances']
+        self.assertGreater(len(attendances), 0)
+
+    def test_export_attendance_csv_admin_allowed(self):
+        attendance = Attendance.objects.create(
+            course=self.course, date=timezone.localdate(), is_active=True
+        )
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.get(
+            reverse('frontend:export_attendance_csv', args=[attendance.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+
+    def test_open_redirect_blocked(self):
+        """Login should not redirect to external URLs"""
+        response = self.client.post(reverse('frontend:login'), {
+            'username': 'testadmin',
+            'password': 'testpassword123',
+            'next': 'https://evil.com/steal',
+        })
+        # Should redirect to dashboard, not to evil.com
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+    def test_ajax_dashboard_stats_blocked_for_student(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:ajax_dashboard_stats'))
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+
+
 if __name__ == '__main__':
     import unittest
     unittest.main()
