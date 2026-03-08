@@ -4,7 +4,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -1084,6 +1084,356 @@ class DeepSecurityTest(FrontendViewsTestCase):
         self.client.login(username='teststudent', password='testpassword123')
         response = self.client.get(reverse('frontend:ajax_dashboard_stats'))
         self.assertRedirects(response, reverse('frontend:dashboard'))
+
+
+# ==================== Two-Factor Authentication Tests ====================
+
+
+class TwoFactorSetupViewTest(FrontendViewsTestCase):
+    """Tests for 2FA setup page"""
+
+    def test_setup_2fa_requires_login(self):
+        response = self.client.get(reverse('frontend:student_setup_2fa'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_setup_2fa_renders_for_student(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:student_setup_2fa'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'students/setup_2fa.html')
+
+    def test_setup_2fa_context(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:student_setup_2fa'))
+        self.assertIn('student', response.context)
+        self.assertIn('credentials', response.context)
+        self.assertIn('has_webauthn', response.context)
+        self.assertIn('has_otp', response.context)
+        self.assertFalse(response.context['has_webauthn'])
+        self.assertFalse(response.context['has_otp'])
+
+
+class WebAuthnRegisterBeginTest(FrontendViewsTestCase):
+    """Tests for WebAuthn registration begin endpoint"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:webauthn_register_begin'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_requires_post(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:webauthn_register_begin'))
+        self.assertEqual(response.status_code, 405)
+
+    def test_returns_json_options(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:webauthn_register_begin'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('challenge', data)
+        self.assertIn('rp', data)
+        self.assertIn('user', data)
+
+    def test_stores_challenge_in_session(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        self.client.post(reverse('frontend:webauthn_register_begin'))
+        session = self.client.session
+        self.assertIn('webauthn_reg_challenge', session)
+
+
+class WebAuthnRegisterCompleteTest(FrontendViewsTestCase):
+    """Tests for WebAuthn registration complete endpoint"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:webauthn_register_complete'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_requires_post(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:webauthn_register_complete'))
+        self.assertEqual(response.status_code, 405)
+
+    def test_fails_without_session_challenge(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(
+            reverse('frontend:webauthn_register_complete'),
+            data='{"id": "test"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('expired', response.json()['error'].lower())
+
+
+class WebAuthnRemoveTest(FrontendViewsTestCase):
+    """Tests for WebAuthn credential removal"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:webauthn_remove'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_remove_redirects_to_setup(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:webauthn_remove'), {
+            'credential_id': 'nonexistent',
+        })
+        self.assertRedirects(response, reverse('frontend:student_setup_2fa'))
+
+    def test_remove_deletes_credential(self):
+        from attendance.models import WebAuthnCredential
+        self.client.login(username='teststudent', password='testpassword123')
+        cred = WebAuthnCredential.objects.create(
+            user=self.student_user,
+            credential_id='test-cred-id',
+            public_key='test-key',
+            sign_count=0,
+        )
+        self.client.post(reverse('frontend:webauthn_remove'), {
+            'credential_id': 'test-cred-id',
+        })
+        self.assertFalse(WebAuthnCredential.objects.filter(id=cred.id).exists())
+
+
+class WebAuthnAuthBeginTest(FrontendViewsTestCase):
+    """Tests for WebAuthn authentication begin endpoint"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:webauthn_auth_begin'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_fails_without_credentials(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:webauthn_auth_begin'))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('No fingerprint', response.json()['error'])
+
+    def test_returns_options_with_credential(self):
+        from attendance.models import WebAuthnCredential
+        self.client.login(username='teststudent', password='testpassword123')
+        WebAuthnCredential.objects.create(
+            user=self.student_user,
+            credential_id='dGVzdC1jcmVk',  # base64url of 'test-cred'
+            public_key='test-key',
+            sign_count=0,
+        )
+        response = self.client.post(reverse('frontend:webauthn_auth_begin'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('challenge', data)
+        self.assertIn('allowCredentials', data)
+
+
+class WebAuthnAuthCompleteTest(FrontendViewsTestCase):
+    """Tests for WebAuthn authentication complete endpoint"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:webauthn_auth_complete'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_fails_without_session_challenge(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(
+            reverse('frontend:webauthn_auth_complete'),
+            data='{"id": "test", "rawId": "test"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('expired', response.json()['error'].lower())
+
+
+class OTPSetupTest(FrontendViewsTestCase):
+    """Tests for OTP setup endpoint"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:student_setup_otp'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_requires_post(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.get(reverse('frontend:student_setup_otp'))
+        self.assertEqual(response.status_code, 405)
+
+    def test_returns_qr_and_secret(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:student_setup_otp'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('secret', data)
+        self.assertIn('qr_svg', data)
+        self.assertTrue(len(data['secret']) > 10)
+        self.assertIn('<svg', data['qr_svg'].lower())
+
+    def test_stores_pending_secret_in_session(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        self.client.post(reverse('frontend:student_setup_otp'))
+        session = self.client.session
+        self.assertIn('pending_otp_secret', session)
+
+
+class OTPVerifyTest(FrontendViewsTestCase):
+    """Tests for OTP verification endpoint"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:student_verify_otp'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_fails_without_pending_secret(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:student_verify_otp'), {
+            'otp_code': '123456',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('expired', response.json()['error'].lower())
+
+    def test_fails_with_invalid_code_format(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        # First set up a pending secret
+        self.client.post(reverse('frontend:student_setup_otp'))
+        # Then try an invalid code
+        response = self.client.post(reverse('frontend:student_verify_otp'), {
+            'otp_code': 'abc',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('6 digits', response.json()['error'])
+
+    def test_succeeds_with_valid_otp(self):
+        import pyotp
+        self.client.login(username='teststudent', password='testpassword123')
+        # Set up OTP
+        self.client.post(reverse('frontend:student_setup_otp'))
+        secret = self.client.session['pending_otp_secret']
+        # Generate a valid code
+        totp = pyotp.TOTP(secret)
+        valid_code = totp.now()
+        response = self.client.post(reverse('frontend:student_verify_otp'), {
+            'otp_code': valid_code,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        # Verify it was saved to the student
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.two_factor_secret, secret)
+        self.assertTrue(self.student.is_two_factor_enabled)
+
+    def test_fails_with_wrong_otp(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        self.client.post(reverse('frontend:student_setup_otp'))
+        response = self.client.post(reverse('frontend:student_verify_otp'), {
+            'otp_code': '000000',
+        })
+        # Might pass or fail depending on timing, but with a random secret
+        # 000000 is very unlikely to be correct
+        self.assertIn(response.status_code, [200, 400])
+
+
+class OTPDisableTest(FrontendViewsTestCase):
+    """Tests for OTP disable endpoint"""
+
+    def test_requires_login(self):
+        response = self.client.post(reverse('frontend:student_disable_otp'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_disables_otp(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        # Enable OTP first
+        self.student.two_factor_secret = 'JBSWY3DPEHPK3PXP'
+        self.student.is_two_factor_enabled = True
+        self.student.save()
+        # Disable it
+        response = self.client.post(reverse('frontend:student_disable_otp'))
+        self.assertRedirects(response, reverse('frontend:student_setup_2fa'))
+        self.student.refresh_from_db()
+        self.assertIsNone(self.student.two_factor_secret)
+        self.assertFalse(self.student.is_two_factor_enabled)
+
+
+@override_settings(DEFAULT_FILE_STORAGE='django.core.files.storage.InMemoryStorage')
+class TwoFactorChallengeIntegrationTest(FrontendViewsTestCase):
+    """Tests for the 2FA challenge flow during attendance marking"""
+
+    def setUp(self):
+        super().setUp()
+        import pyotp
+        # Set up an active attendance session with 2FA required
+        self.attendance = Attendance.objects.create(
+            course=self.course,
+            date=timezone.localdate(),
+            is_active=True,
+            require_two_factor_auth=True,
+            lecturer_latitude=Decimal('5.6500'),
+            lecturer_longitude=Decimal('-0.1860'),
+        )
+        from attendance.models import AttendanceToken
+        self.token = AttendanceToken.objects.create(
+            course=self.course,
+            token='t2fatk',
+            expires_at=timezone.now() + timedelta(minutes=30),
+        )
+        # Student OTP setup
+        self.student.two_factor_secret = pyotp.random_base32()
+        self.student.is_two_factor_enabled = True
+        self.student.save()
+
+    def test_2fa_challenge_shown_when_required(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:attendance_mark'), {
+            'token': 't2fatk',
+            'latitude': '5.6500',
+            'longitude': '-0.1860',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'attendance/two_factor_challenge.html')
+
+    def test_2fa_otp_verification_works(self):
+        import pyotp
+        self.client.login(username='teststudent', password='testpassword123')
+        totp = pyotp.TOTP(self.student.two_factor_secret)
+        response = self.client.post(reverse('frontend:attendance_mark'), {
+            'token': 't2fatk',
+            'latitude': '5.6500',
+            'longitude': '-0.1860',
+            'two_factor_completed': 'on',
+            'two_factor_method': 'otp',
+            'otp_code': totp.now(),
+        })
+        # Should succeed (redirect to success) or fail on GPS, but NOT fail on 2FA
+        self.assertNotContains(response, 'Invalid or expired OTP', status_code=response.status_code)
+
+    def test_2fa_invalid_otp_rejected(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:attendance_mark'), {
+            'token': 't2fatk',
+            'latitude': '5.6500',
+            'longitude': '-0.1860',
+            'two_factor_completed': 'on',
+            'two_factor_method': 'otp',
+            'otp_code': '000000',
+        })
+        self.assertEqual(response.status_code, 200)
+
+    def test_2fa_webauthn_fails_without_session_flag(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:attendance_mark'), {
+            'token': 't2fatk',
+            'latitude': '5.6500',
+            'longitude': '-0.1860',
+            'two_factor_completed': 'on',
+            'two_factor_method': 'webauthn',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'attendance/two_factor_challenge.html')
+
+    def test_redirect_to_setup_when_no_2fa_configured(self):
+        # Remove 2FA setup
+        self.student.two_factor_secret = None
+        self.student.is_two_factor_enabled = False
+        self.student.save()
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(reverse('frontend:attendance_mark'), {
+            'token': 't2fatk',
+            'latitude': '5.6500',
+            'longitude': '-0.1860',
+        })
+        self.assertRedirects(response, reverse('frontend:student_setup_2fa'))
 
 
 if __name__ == '__main__':

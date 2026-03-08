@@ -1164,7 +1164,6 @@ def attendance_mark(request):
                                 return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
                         elif two_factor_method == 'otp':
                             # Verify OTP code using pyotp
-                            import pyotp
                             otp_code = request.POST.get('otp_code', '')
                             if len(otp_code) != 6 or not otp_code.isdigit():
                                 messages.error(request, 'Invalid OTP code. Must be 6 digits.')

@@ -82,6 +82,14 @@ class Student(models.Model):
     def get_full_name(self):
         return f"{self.name} ({self.student_id})"
 
+    def should_send_email_notifications(self):
+        """Check if student should receive email notifications"""
+        return self.is_notifications_enabled and (self.notification_preference in ['email', 'both'])
+
+    def should_send_sms_notifications(self):
+        """Check if student should receive SMS notifications"""
+        return self.is_notifications_enabled and (self.notification_preference in ['sms', 'both']) and self.phone_number
+
 
 class WebAuthnCredential(models.Model):
     """Stores WebAuthn (FIDO2) credentials for biometric authentication"""
@@ -94,14 +102,6 @@ class WebAuthnCredential(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.name}"
-    
-    def should_send_email_notifications(self):
-        """Check if student should receive email notifications"""
-        return self.is_notifications_enabled and (self.notification_preference in ['email', 'both'])
-    
-    def should_send_sms_notifications(self):
-        """Check if student should receive SMS notifications"""
-        return self.is_notifications_enabled and (self.notification_preference in ['sms', 'both']) and self.phone_number
 
 class Course(models.Model):
     name = models.CharField(max_length=100)
