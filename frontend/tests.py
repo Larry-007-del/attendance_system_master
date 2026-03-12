@@ -608,13 +608,15 @@ class CourseViewsTest(FrontendViewsTestCase):
         self.assertTrue(Course.objects.filter(pk=self.course.pk).exists())
 
     def test_course_delete_by_own_lecturer(self):
+        """Lecturers can no longer delete courses — only admins can."""
         self.client.login(username='testlecturer', password='testpassword123')
         pk = self.course.pk
         response = self.client.post(
             reverse('frontend:course_delete', args=[pk])
         )
-        self.assertRedirects(response, reverse('frontend:course_list'))
-        self.assertFalse(Course.objects.filter(pk=pk).exists())
+        self.assertRedirects(response, reverse('frontend:dashboard'))
+        # Course should still exist (lecturer is not admin)
+        self.assertTrue(Course.objects.filter(pk=pk).exists())
 
 
 class MyCoursesViewTest(FrontendViewsTestCase):
@@ -1736,4 +1738,36 @@ class DarkModeToggleTest(FrontendViewsTestCase):
         self.assertContains(response, 'theme-toggle-light-icon')
         self.assertContains(response, 'theme-toggle-dark-icon')
         self.assertContains(response, 'exodus-theme')
+
+
+class DeleteViewAdminRequiredTest(FrontendViewsTestCase):
+    """Tests that delete views enforce admin_required (not just login_required)."""
+
+    def test_student_delete_blocked_for_non_admin(self):
+        self.client.login(username='testlecturer', password='testpassword123')
+        response = self.client.post(
+            reverse('frontend:student_delete', kwargs={'pk': self.student.pk})
+        )
+        # admin_required redirects to dashboard
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('dashboard', response.url)
+        # Student should still exist
+        self.assertTrue(Student.objects.filter(pk=self.student.pk).exists())
+
+    def test_course_delete_blocked_for_student(self):
+        self.client.login(username='teststudent', password='testpassword123')
+        response = self.client.post(
+            reverse('frontend:course_delete', kwargs={'pk': self.course.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('dashboard', response.url)
+        self.assertTrue(Course.objects.filter(pk=self.course.pk).exists())
+
+    def test_admin_can_delete_student(self):
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.post(
+            reverse('frontend:student_delete', kwargs={'pk': self.student.pk})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Student.objects.filter(pk=self.student.pk).exists())
 

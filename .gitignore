@@ -40,5 +40,4 @@ node_modules/
 Thumbs.db
 
 # Test artifacts
-test_out.txt
-test_result.txt
+test_*.txt

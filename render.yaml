@@ -35,6 +35,27 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
 
+# Cron job: auto-close expired attendance sessions every 30 minutes
+  - type: cron
+    name: close-expired-sessions
+    env: python
+    schedule: "*/30 * * * *"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python attendance_system_master/manage.py close_expired_sessions --notify"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.6"
+      - key: DJANGO_SETTINGS_MODULE
+        value: attendance_system.settings
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: attendance-db
+          property: connectionString
+
 databases:
   - name: attendance-db
     plan: free

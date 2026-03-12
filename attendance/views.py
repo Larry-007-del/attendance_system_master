@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.throttling import ScopedRateThrottle
 from django.contrib.auth import authenticate, logout
 from django.utils import timezone
 from django.http import HttpResponse
@@ -319,6 +320,9 @@ class StudentEnrolledCoursesView(generics.ListAPIView):
 
 # Custom Login Views
 class StudentLoginView(ObtainAuthToken):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'burst'
+
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -342,6 +346,9 @@ class StudentLoginView(ObtainAuthToken):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 class StaffLoginView(ObtainAuthToken):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'burst'
+
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -375,7 +382,6 @@ class LogoutView(generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 # Location-based Attendance View
-from rest_framework.throttling import ScopedRateThrottle
 
 class SubmitLocationView(generics.GenericAPIView):
     serializer_class = SubmitLocationSerializer

@@ -103,6 +103,6 @@ class LogoutSerializer(serializers.Serializer):
 
 # Submit Location serializer
 class SubmitLocationSerializer(serializers.Serializer):
-    latitude = serializers.FloatField()
-    longitude = serializers.FloatField()
-    attendance_token = serializers.CharField()
+    latitude = serializers.FloatField(min_value=-90, max_value=90)
+    longitude = serializers.FloatField(min_value=-180, max_value=180)
+    attendance_token = serializers.CharField(max_length=10)

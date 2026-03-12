@@ -687,17 +687,10 @@ def student_edit(request, pk):
     return render(request, 'students/edit.html', context)
 
 
-@login_required
+@admin_required
 def student_delete(request, pk):
     """Delete student"""
     student = get_object_or_404(Student, pk=pk)
-    
-    # Security check: Only superusers can delete students
-    if not request.user.is_superuser:
-        if request.headers.get('HX-Request'):
-            return HttpResponse('Unauthorized', status=403)
-        messages.error(request, "You do not have permission to delete this student.")
-        return redirect('frontend:student_list')
     
     if request.method == 'POST':
         user = student.user
@@ -901,18 +894,11 @@ def course_edit(request, pk):
     return render(request, 'courses/edit.html', context)
 
 
-@login_required
+@admin_required
 def course_delete(request, pk):
     """Delete course"""
     course = get_object_or_404(Course, pk=pk)
     
-    # Security check: Only superusers or the course's lecturer can delete
-    if not (request.user.is_superuser or (hasattr(request.user, 'lecturer') and course.lecturer == request.user.lecturer)):
-        if request.headers.get('HX-Request'):
-            return HttpResponse('Unauthorized', status=403)
-        messages.error(request, "You do not have permission to delete this course.")
-        return redirect('frontend:dashboard')
-
     if request.method == 'POST':
         course.delete()
         if request.headers.get('HX-Request'):
