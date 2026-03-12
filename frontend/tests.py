@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.management import call_command
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -1566,3 +1567,95 @@ class RegisterRateLimitTest(FrontendViewsTestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Too many registration attempts')
+
+
+class SEOMetaTagsTest(FrontendViewsTestCase):
+    """Tests for OpenGraph and SEO meta tags on public pages."""
+
+    def test_login_page_has_og_tags(self):
+        response = self.client.get(reverse('frontend:login'))
+        self.assertContains(response, 'og:title')
+        self.assertContains(response, 'og:description')
+        self.assertContains(response, 'og:site_name')
+        self.assertContains(response, 'meta name="description"')
+
+    def test_register_page_has_og_tags(self):
+        response = self.client.get(reverse('frontend:register'))
+        self.assertContains(response, 'og:title')
+        self.assertContains(response, 'og:description')
+        self.assertContains(response, 'meta name="description"')
+
+    def test_base_template_has_og_tags(self):
+        """Authenticated pages (via base.html) include OG blocks."""
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.get(reverse('frontend:dashboard'))
+        self.assertContains(response, 'og:title')
+        self.assertContains(response, 'og:site_name')
+        self.assertContains(response, 'theme-color')
+
+    def test_password_reset_has_noindex(self):
+        response = self.client.get(reverse('frontend:password_reset'))
+        self.assertContains(response, 'noindex')
+
+
+class AdminDashboardStatsTest(FrontendViewsTestCase):
+    """Tests for the admin dashboard stats widget."""
+
+    def test_admin_index_has_stats(self):
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.get('/admin/')
+        self.assertEqual(response.status_code, 200)
+        # Stats cards should show model counts
+        self.assertContains(response, 'Students')
+        self.assertContains(response, 'Lecturers')
+        self.assertContains(response, 'Active Courses')
+
+    def test_admin_index_uses_custom_template(self):
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.get('/admin/')
+        templates_used = [t.name for t in response.templates]
+        self.assertIn('admin/exodus_index.html', templates_used)
+
+
+class DbBackupCommandTest(TestCase):
+    """Tests for the dbbackup management command."""
+
+    def test_backup_creates_file(self):
+        import os
+        output = 'test_dbbackup_output.json'
+        try:
+            call_command('dbbackup', output=output)
+            self.assertTrue(os.path.exists(output))
+            self.assertGreater(os.path.getsize(output), 0)
+        finally:
+            if os.path.exists(output):
+                os.remove(output)
+
+    def test_backup_xml_format(self):
+        import os
+        output = 'test_dbbackup_output.xml'
+        try:
+            call_command('dbbackup', output=output, format='xml')
+            self.assertTrue(os.path.exists(output))
+            with open(output, 'r') as f:
+                content = f.read()
+            self.assertIn('<?xml', content)
+        finally:
+            if os.path.exists(output):
+                os.remove(output)
+
+    def test_backup_prune_keeps_latest(self):
+        import os
+        # Create 3 fake backup files
+        for i in range(3):
+            with open(f'backup_2026010{i}_000000.json', 'w') as f:
+                f.write('{}')
+        try:
+            call_command('dbbackup', output='backup_20260103_000000.json', latest=2)
+            # Should have pruned old ones, keeping only 2 most recent
+            remaining = [f for f in os.listdir('.') if f.startswith('backup_') and f.endswith('.json')]
+            self.assertLessEqual(len(remaining), 2)
+        finally:
+            for f in os.listdir('.'):
+                if f.startswith('backup_') and f.endswith('.json'):
+                    os.remove(f)

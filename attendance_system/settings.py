@@ -61,6 +61,71 @@ SESSION_COOKIE_HTTPONLY = True
 
 # Application definition
 
+# Jazzmin Admin Theme Configuration
+JAZZMIN_SETTINGS = {
+    "site_title": "Exodus Admin",
+    "site_header": "Exodus",
+    "site_brand": "Exodus",
+    "welcome_sign": "Welcome to Exodus Administration",
+    "copyright": "Exodus Attendance System",
+    "search_model": ["auth.User", "attendance.Student", "attendance.Lecturer"],
+    "topmenu_links": [
+        {"name": "Dashboard", "url": "/", "new_window": True},
+        {"name": "API Docs", "url": "/api/docs/", "new_window": True},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "attendance.Student": "fas fa-user-graduate",
+        "attendance.Lecturer": "fas fa-chalkboard-teacher",
+        "attendance.Course": "fas fa-book",
+        "attendance.CourseEnrollment": "fas fa-user-plus",
+        "attendance.Attendance": "fas fa-clipboard-check",
+        "attendance.AttendanceToken": "fas fa-qrcode",
+        "attendance.AttendanceStudent": "fas fa-check-circle",
+        "attendance.WebAuthnCredential": "fas fa-fingerprint",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": True,
+    "use_google_fonts_cdn": False,
+    "changeform_format": "horizontal_tabs",
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": True,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-indigo",
+    "accent": "accent-primary",
+    "navbar": "navbar-indigo navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-indigo",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}
+
 INSTALLED_APPS = [
     'jazzmin',  # Jazzmin admin theme
     'django.contrib.admin',

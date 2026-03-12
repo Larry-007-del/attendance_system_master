@@ -8,6 +8,9 @@ from django.db import connection
 from django.core.cache import cache
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+# Custom admin index template (extends Jazzmin's with stats widget)
+admin.site.index_template = 'admin/exodus_index.html'
+
 
 def health_view(request):
     """Health check endpoint for Render / uptime monitors."""
