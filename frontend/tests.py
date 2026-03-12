@@ -1659,3 +1659,81 @@ class DbBackupCommandTest(TestCase):
             for f in os.listdir('.'):
                 if f.startswith('backup_') and f.endswith('.json'):
                     os.remove(f)
+
+
+class CloseExpiredSessionsTest(FrontendViewsTestCase):
+    """Tests for close_expired_sessions management command."""
+
+    def _create_expired_session(self):
+        """Helper: create a session that's already expired."""
+        session = Attendance.objects.create(
+            course=self.course,
+            date=timezone.now().date(),
+            is_active=True,
+            duration_hours=1,
+            created_by=self.lecturer_user,
+        )
+        # Backdate created_at so it's expired
+        Attendance.objects.filter(pk=session.pk).update(
+            created_at=timezone.now() - timedelta(hours=2)
+        )
+        session.refresh_from_db()
+        return session
+
+    def test_closes_expired_session(self):
+        session = self._create_expired_session()
+        call_command('close_expired_sessions')
+        session.refresh_from_db()
+        self.assertFalse(session.is_active)
+        self.assertIsNotNone(session.ended_at)
+
+    def test_does_not_close_active_session(self):
+        session = Attendance.objects.create(
+            course=self.course,
+            date=timezone.now().date(),
+            is_active=True,
+            duration_hours=10,
+            created_by=self.lecturer_user,
+        )
+        call_command('close_expired_sessions')
+        session.refresh_from_db()
+        self.assertTrue(session.is_active)
+
+    def test_dry_run_does_not_modify(self):
+        session = self._create_expired_session()
+        call_command('close_expired_sessions', dry_run=True)
+        session.refresh_from_db()
+        self.assertTrue(session.is_active)  # unchanged
+
+    def test_deactivates_related_tokens(self):
+        from attendance.models import AttendanceToken
+        session = self._create_expired_session()
+        # Create token without saving (to avoid Cloudinary upload in tests)
+        token = AttendanceToken(
+            course=self.course, token='EXP123', is_active=True,
+        )
+        # Bypass the save() QR generation by inserting directly
+        token.generated_at = timezone.now()
+        token.expires_at = timezone.now() + timedelta(hours=2)
+        AttendanceToken.objects.bulk_create([token])
+        call_command('close_expired_sessions')
+        self.assertFalse(AttendanceToken.objects.filter(token='EXP123', is_active=True).exists())
+
+    def test_no_expired_sessions_reports_clean(self):
+        from io import StringIO
+        out = StringIO()
+        call_command('close_expired_sessions', stdout=out)
+        self.assertIn('No expired sessions found', out.getvalue())
+
+
+class DarkModeToggleTest(FrontendViewsTestCase):
+    """Tests that the dark mode toggle is present in the authenticated layout."""
+
+    def test_toggle_button_present(self):
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.get(reverse('frontend:dashboard'))
+        self.assertContains(response, 'id="theme-toggle"')
+        self.assertContains(response, 'theme-toggle-light-icon')
+        self.assertContains(response, 'theme-toggle-dark-icon')
+        self.assertContains(response, 'exodus-theme')
+
