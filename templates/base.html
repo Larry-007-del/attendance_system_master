@@ -17,7 +17,10 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900">
 
-    <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+    <!-- Skip to main content link for keyboard/screen-reader users -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:outline-none">Skip to main content</a>
+
+    <nav class="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700" aria-label="Top navigation">
       <div class="px-3 py-3 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center justify-start rtl:justify-end">
@@ -167,13 +170,14 @@
        </div>
     </aside>
 
-    <div class="p-4 sm:ml-64">
+    <main id="main-content" class="p-4 sm:ml-64" role="main">
        <div class="p-4 mt-14 min-h-screen">
             {% if messages %}
-            <div class="fixed top-5 right-5 z-50 space-y-3">
+            <div class="fixed top-5 right-5 z-50 space-y-3" role="status" aria-live="polite">
                 {% for message in messages %}
                 <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" 
                      x-transition.duration.500ms
+                     role="alert"
                      class="p-4 rounded-md shadow-lg text-white {% if message.tags == 'error' %}bg-red-500{% elif message.tags == 'success' %}bg-green-500{% else %}bg-indigo-500{% endif %}">
                     {{ message }}
                 </div>
@@ -184,7 +188,7 @@
             {% block content %}
             {% endblock %}
        </div>
-    </div>
+    </main>
     
     <script src="{% static 'js/flowbite.min.js' %}"></script>
     
@@ -227,11 +231,11 @@
     </script>
 
     <!-- Footer -->
-    <div class="sm:ml-64 border-t border-gray-200 dark:border-gray-700 mt-8">
+    <footer class="sm:ml-64 border-t border-gray-200 dark:border-gray-700 mt-8" role="contentinfo">
         <div class="p-4 text-center text-xs text-gray-400">
             &copy; {% now "Y" %} Exodus Attendance System. All rights reserved.
         </div>
-    </div>
+    </footer>
 
 </body>
 </html>
