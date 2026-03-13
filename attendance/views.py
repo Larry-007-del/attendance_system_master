@@ -10,6 +10,7 @@ from django.contrib.auth import authenticate, logout
 from django.utils import timezone
 from django.http import HttpResponse
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 import csv
 from openpyxl import Workbook
 from collections import defaultdict
@@ -22,7 +23,15 @@ from .serializers import (
     AttendanceSerializer,
     AttendanceTokenSerializer,
     LogoutSerializer,
-    SubmitLocationSerializer
+    SubmitLocationSerializer,
+    APIErrorSerializer,
+    StudentLoginRequestSerializer,
+    StudentLoginSuccessSerializer,
+    StaffLoginRequestSerializer,
+    StaffLoginSuccessSerializer,
+    AttendanceMarkedSerializer,
+    LecturerLocationResponseSerializer,
+    LecturerLocationRequestSerializer,
 )
 
 
@@ -338,6 +347,22 @@ class StudentLoginView(ObtainAuthToken):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'student_login'
 
+    @extend_schema(
+        request=StudentLoginRequestSerializer,
+        responses={
+            200: OpenApiResponse(response=StudentLoginSuccessSerializer, description='Student login successful.'),
+            400: OpenApiResponse(response=APIErrorSerializer, description='Validation/authentication failure.'),
+            429: OpenApiResponse(response=APIErrorSerializer, description='Login rate limit exceeded.'),
+        },
+        examples=[
+            OpenApiExample(
+                'Student login error',
+                value={'error': 'Invalid credentials', 'code': 'invalid_credentials'},
+                response_only=True,
+                status_codes=['400'],
+            ),
+        ],
+    )
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -364,6 +389,22 @@ class StaffLoginView(ObtainAuthToken):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'staff_login'
 
+    @extend_schema(
+        request=StaffLoginRequestSerializer,
+        responses={
+            200: OpenApiResponse(response=StaffLoginSuccessSerializer, description='Staff login successful.'),
+            400: OpenApiResponse(response=APIErrorSerializer, description='Validation/authentication failure.'),
+            429: OpenApiResponse(response=APIErrorSerializer, description='Login rate limit exceeded.'),
+        },
+        examples=[
+            OpenApiExample(
+                'Staff login error',
+                value={'error': 'Invalid staff ID', 'code': 'invalid_staff_id'},
+                response_only=True,
+                status_codes=['400'],
+            ),
+        ],
+    )
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -404,6 +445,22 @@ class SubmitLocationView(generics.GenericAPIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'burst'
 
+    @extend_schema(
+        request=SubmitLocationSerializer,
+        responses={
+            200: OpenApiResponse(response=AttendanceMarkedSerializer, description='Attendance marked successfully.'),
+            400: OpenApiResponse(response=APIErrorSerializer, description='Token/coordinates/session validation error.'),
+            429: OpenApiResponse(response=APIErrorSerializer, description='Burst rate limit exceeded.'),
+        },
+        examples=[
+            OpenApiExample(
+                'Location out of range',
+                value={'error': 'Location is out of range', 'code': 'location_out_of_range'},
+                response_only=True,
+                status_codes=['400'],
+            ),
+        ],
+    )
     def post(self, request, *args, **kwargs):
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
@@ -508,6 +565,14 @@ class LecturerLocationView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = SubmitLocationSerializer  # For drf_spectacular schema
 
+    @extend_schema(
+        request=LecturerLocationRequestSerializer,
+        responses={
+            200: OpenApiResponse(response=LecturerLocationResponseSerializer, description='Lecturer coordinates lookup success.'),
+            400: OpenApiResponse(response=APIErrorSerializer, description='Token/coordinate availability failure.'),
+            403: OpenApiResponse(response=APIErrorSerializer, description='Not authorized for requested course.'),
+        },
+    )
     def post(self, request, *args, **kwargs):
         token_value = request.data.get('token')
 

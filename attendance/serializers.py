@@ -3,6 +3,52 @@ from drf_spectacular.utils import extend_schema_field
 from .models import Lecturer, Student, Course, CourseEnrollment, Attendance, AttendanceToken
 from django.contrib.auth.models import User
 
+
+class APIErrorSerializer(serializers.Serializer):
+    error = serializers.CharField()
+    code = serializers.CharField()
+    details = serializers.DictField(required=False)
+
+
+class StudentLoginRequestSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    student_id = serializers.CharField()
+
+
+class StudentLoginSuccessSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    student_id = serializers.CharField()
+
+
+class StaffLoginRequestSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    staff_id = serializers.CharField()
+
+
+class StaffLoginSuccessSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    user_id = serializers.IntegerField()
+    username = serializers.CharField()
+    staff_id = serializers.CharField()
+
+
+class AttendanceMarkedSerializer(serializers.Serializer):
+    status = serializers.CharField()
+
+
+class LecturerLocationResponseSerializer(serializers.Serializer):
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    token = serializers.CharField()
+
+
+class LecturerLocationRequestSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
 # User serializer
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
