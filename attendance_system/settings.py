@@ -258,6 +258,8 @@ REST_FRAMEWORK = {
         'anon': '10/minute',
         'user': '1000/day',
         'burst': '60/minute',
+        'student_login': '5/minute',
+        'staff_login': '5/minute',
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',

@@ -6,6 +6,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -653,6 +654,7 @@ class StudentLoginAPITest(TestCase):
     """Tests for student login endpoint"""
 
     def setUp(self):
+        cache.clear()
         self.client_api = APIClient()
         self.user = User.objects.create_user(
             username='stulogin', password='pass1234'
@@ -683,11 +685,27 @@ class StudentLoginAPITest(TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_student_login_throttled_after_limit(self):
+        # Scope is configured at 5/minute
+        for _ in range(5):
+            response = self.client_api.post(
+                '/api/login/student/',
+                {'username': 'stulogin', 'password': 'wrongpass', 'student_id': 'SL01'},
+            )
+            self.assertEqual(response.status_code, 400)
+
+        throttled = self.client_api.post(
+            '/api/login/student/',
+            {'username': 'stulogin', 'password': 'wrongpass', 'student_id': 'SL01'},
+        )
+        self.assertEqual(throttled.status_code, 429)
+
 
 class StaffLoginAPITest(TestCase):
     """Tests for staff/lecturer login endpoint"""
 
     def setUp(self):
+        cache.clear()
         self.client_api = APIClient()
         self.user = User.objects.create_user(
             username='leclogin', password='pass1234'
@@ -710,6 +728,21 @@ class StaffLoginAPITest(TestCase):
             {'username': 'leclogin', 'password': 'pass1234', 'staff_id': 'WRONG'},
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_staff_login_throttled_after_limit(self):
+        # Scope is configured at 5/minute
+        for _ in range(5):
+            response = self.client_api.post(
+                '/api/login/staff/',
+                {'username': 'leclogin', 'password': 'wrongpass', 'staff_id': 'LL01'},
+            )
+            self.assertEqual(response.status_code, 400)
+
+        throttled = self.client_api.post(
+            '/api/login/staff/',
+            {'username': 'leclogin', 'password': 'wrongpass', 'staff_id': 'LL01'},
+        )
+        self.assertEqual(throttled.status_code, 429)
 
 
 class LogoutAPITest(APIAuthTestCase):

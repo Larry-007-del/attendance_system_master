@@ -204,7 +204,7 @@ Authorization: Token <your-token>
 
 ## Testing
 
-The project has **274 tests** covering models, API endpoints, serializers, views, access control, rate limiting, 2FA flows, management commands, and integration scenarios.
+The project has **276 tests** covering models, API endpoints, serializers, views, access control, rate limiting, 2FA flows, management commands, and integration scenarios.
 
 ```bash
 # Run all tests
@@ -306,6 +306,7 @@ Production mode (`DJANGO_DEBUG=False`) automatically enables:
 - HSTS headers (1 year, include subdomains, preload)
 - XSS and content-type sniffing protection
 - API rate limiting (10/min anonymous, 1000/day authenticated)
+- Dedicated API login throttling (5/min per scope for student/staff token login)
 - Login rate limiting (5 attempts per 5 minutes per IP)
 - Registration rate limiting (5 attempts per hour per IP)
 - Scoped access control on student detail views

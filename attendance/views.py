@@ -321,7 +321,7 @@ class StudentEnrolledCoursesView(generics.ListAPIView):
 # Custom Login Views
 class StudentLoginView(ObtainAuthToken):
     throttle_classes = [ScopedRateThrottle]
-    throttle_scope = 'burst'
+    throttle_scope = 'student_login'
 
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
@@ -347,7 +347,7 @@ class StudentLoginView(ObtainAuthToken):
 
 class StaffLoginView(ObtainAuthToken):
     throttle_classes = [ScopedRateThrottle]
-    throttle_scope = 'burst'
+    throttle_scope = 'staff_login'
 
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
