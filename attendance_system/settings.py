@@ -212,9 +212,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Use STORAGES (Django 4.2+) instead of deprecated STATICFILES_STORAGE/DEFAULT_FILE_STORAGE
+# In development/tests, keep media local to avoid external dependency requirements.
+if DEBUG:
+    default_storage_backend = 'django.core.files.storage.FileSystemStorage'
+else:
+    default_storage_backend = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 STORAGES = {
     'default': {
-        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+        'BACKEND': default_storage_backend,
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',

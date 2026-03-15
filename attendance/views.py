@@ -14,6 +14,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 import csv
 from openpyxl import Workbook
 from collections import defaultdict
+from enum import Enum
 
 from .models import Lecturer, Student, Course, Attendance, AttendanceToken, AttendanceStudent
 from .serializers import (
@@ -33,9 +34,12 @@ from .serializers import (
     LecturerLocationResponseSerializer,
     LecturerLocationRequestSerializer,
 )
+from .error_codes import APIErrorCode
 
 
 def api_error(message, code, http_status=status.HTTP_400_BAD_REQUEST, details=None):
+    if isinstance(code, Enum):
+        code = code.value
     payload = {
         'error': message,
         'code': code,
@@ -111,7 +115,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         # Ownership check: only the course's lecturer or an admin can generate tokens
         if not request.user.is_superuser:
             if not hasattr(request.user, 'lecturer') or course.lecturer != request.user.lecturer:
-                return api_error('You do not own this course.', 'course_forbidden', status.HTTP_403_FORBIDDEN)
+                return api_error('You do not own this course.', APIErrorCode.COURSE_FORBIDDEN, status.HTTP_403_FORBIDDEN)
         
         token_value = request.data.get('token')
         latitude = request.data.get('latitude')
@@ -120,7 +124,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         if not token_value or not latitude or not longitude:
             return api_error(
                 'Token, latitude, and longitude are required.',
-                'missing_required_fields',
+                APIErrorCode.MISSING_REQUIRED_FIELDS,
                 status.HTTP_400_BAD_REQUEST,
                 {'required': ['token', 'latitude', 'longitude']}
             )
@@ -180,7 +184,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         token = request.data.get('token')
 
         if not token:
-            return api_error('Token is required.', 'token_required', status.HTTP_400_BAD_REQUEST)
+            return api_error('Token is required.', APIErrorCode.TOKEN_REQUIRED, status.HTTP_400_BAD_REQUEST)
 
         try:
             attendance_token = AttendanceToken.objects.get(token=token, is_active=True)
@@ -188,7 +192,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             student = get_object_or_404(Student, user=request.user)
 
             if not course.students.filter(pk=student.pk).exists():
-                return api_error('Student is not enrolled in this course.', 'student_not_enrolled', status.HTTP_400_BAD_REQUEST)
+                return api_error('Student is not enrolled in this course.', APIErrorCode.STUDENT_NOT_ENROLLED, status.HTTP_400_BAD_REQUEST)
 
             attendance = Attendance.objects.filter(
                 course=course,
@@ -197,7 +201,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             ).first()
             
             if not attendance or not attendance.is_session_valid:
-                return api_error('This attendance session has expired.', 'session_expired', status.HTTP_400_BAD_REQUEST)
+                return api_error('This attendance session has expired.', APIErrorCode.SESSION_EXPIRED, status.HTTP_400_BAD_REQUEST)
             
             attendance.present_students.add(student)
             attendance.save()
@@ -205,7 +209,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             return Response({'message': 'Attendance recorded successfully.'}, status=status.HTTP_200_OK)
 
         except AttendanceToken.DoesNotExist:
-            return api_error('Invalid or expired token.', 'invalid_or_expired_token', status.HTTP_400_BAD_REQUEST)
+            return api_error('Invalid or expired token.', APIErrorCode.INVALID_OR_EXPIRED_TOKEN, status.HTTP_400_BAD_REQUEST)
         
 # Attendance ViewSet
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -218,7 +222,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         attendance_id = request.query_params.get('attendance_id')
 
         if not attendance_id:
-            return api_error('attendance_id parameter is required.', 'attendance_id_required', status.HTTP_400_BAD_REQUEST)
+            return api_error('attendance_id parameter is required.', APIErrorCode.ATTENDANCE_ID_REQUIRED, status.HTTP_400_BAD_REQUEST)
 
         attendance = get_object_or_404(Attendance, id=attendance_id)
 
@@ -299,18 +303,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def end_attendance(self, request):
         course_id = request.data.get('course_id')
         if not course_id:
-            return api_error('course_id is required.', 'course_id_required', status.HTTP_400_BAD_REQUEST)
+            return api_error('course_id is required.', APIErrorCode.COURSE_ID_REQUIRED, status.HTTP_400_BAD_REQUEST)
         
         try:
             # Retrieve the most recent attendance for the course
             attendance = Attendance.objects.filter(course_id=course_id, is_active=True).latest('date')
         except Attendance.DoesNotExist:
-            return api_error('No active attendance found for the course.', 'attendance_not_found', status.HTTP_404_NOT_FOUND)
+            return api_error('No active attendance found for the course.', APIErrorCode.ATTENDANCE_NOT_FOUND, status.HTTP_404_NOT_FOUND)
 
         # Ownership check: only course lecturer or admin can end a session
         if not request.user.is_superuser:
             if not hasattr(request.user, 'lecturer') or attendance.course.lecturer != request.user.lecturer:
-                return api_error('You do not own this course.', 'course_forbidden', status.HTTP_403_FORBIDDEN)
+                return api_error('You do not own this course.', APIErrorCode.COURSE_FORBIDDEN, status.HTTP_403_FORBIDDEN)
 
         attendance.is_active = False
         attendance.ended_at = timezone.now()
@@ -381,9 +385,9 @@ class StudentLoginView(ObtainAuthToken):
                     'student_id': student.student_id
                 })
             else:
-                return api_error('Invalid student ID', 'invalid_student_id', status.HTTP_400_BAD_REQUEST)
+                return api_error('Invalid student ID', APIErrorCode.INVALID_STUDENT_ID, status.HTTP_400_BAD_REQUEST)
 
-        return api_error('Invalid credentials', 'invalid_credentials', status.HTTP_400_BAD_REQUEST)
+        return api_error('Invalid credentials', APIErrorCode.INVALID_CREDENTIALS, status.HTTP_400_BAD_REQUEST)
 
 class StaffLoginView(ObtainAuthToken):
     throttle_classes = [ScopedRateThrottle]
@@ -423,9 +427,9 @@ class StaffLoginView(ObtainAuthToken):
                     'staff_id': lecturer.staff_id
                 })
             else:
-                return api_error('Invalid staff ID', 'invalid_staff_id', status.HTTP_400_BAD_REQUEST)
+                return api_error('Invalid staff ID', APIErrorCode.INVALID_STAFF_ID, status.HTTP_400_BAD_REQUEST)
 
-        return api_error('Invalid credentials', 'invalid_credentials', status.HTTP_400_BAD_REQUEST)
+        return api_error('Invalid credentials', APIErrorCode.INVALID_CREDENTIALS, status.HTTP_400_BAD_REQUEST)
 
 # Logout View
 class LogoutView(generics.GenericAPIView):
@@ -471,17 +475,17 @@ class SubmitLocationView(generics.GenericAPIView):
             lat_float = float(latitude)
             lon_float = float(longitude)
         except (TypeError, ValueError):
-            return api_error('Invalid GPS coordinates.', 'invalid_gps_coordinates', status.HTTP_400_BAD_REQUEST)
+            return api_error('Invalid GPS coordinates.', APIErrorCode.INVALID_GPS_COORDINATES, status.HTTP_400_BAD_REQUEST)
 
         try:
             token = AttendanceToken.objects.get(token=attendance_token, is_active=True)
         except AttendanceToken.DoesNotExist:
-            return api_error('Invalid or expired token', 'invalid_or_expired_token', status.HTTP_400_BAD_REQUEST)
+            return api_error('Invalid or expired token', APIErrorCode.INVALID_OR_EXPIRED_TOKEN, status.HTTP_400_BAD_REQUEST)
 
         attendance = Attendance.objects.filter(course=token.course, date=timezone.localdate()).first()
 
         if not attendance or not attendance.is_session_valid:
-            return api_error('This attendance session has expired.', 'session_expired', status.HTTP_400_BAD_REQUEST)
+            return api_error('This attendance session has expired.', APIErrorCode.SESSION_EXPIRED, status.HTTP_400_BAD_REQUEST)
 
         if attendance.is_within_radius(lat_float, lon_float):
             user = request.user
@@ -500,9 +504,9 @@ class SubmitLocationView(generics.GenericAPIView):
                     # CRITICAL FIX: Add student to present_students M2M field
                     attendance.present_students.add(student)
                     return Response({'status': 'Attendance marked successfully'}, status=status.HTTP_200_OK)
-            return api_error('Student not enrolled in this course', 'student_not_enrolled', status.HTTP_400_BAD_REQUEST)
+            return api_error('Student not enrolled in this course', APIErrorCode.STUDENT_NOT_ENROLLED, status.HTTP_400_BAD_REQUEST)
 
-        return api_error('Location is out of range', 'location_out_of_range', status.HTTP_400_BAD_REQUEST)
+        return api_error('Location is out of range', APIErrorCode.LOCATION_OUT_OF_RANGE, status.HTTP_400_BAD_REQUEST)
 
 # Student Attendance History View
 
@@ -585,15 +589,15 @@ class LecturerLocationView(APIView):
             if not request.user.is_superuser:
                 if hasattr(request.user, 'student'):
                     if not course.students.filter(pk=request.user.student.pk).exists():
-                        return api_error('Not enrolled in this course.', 'student_not_enrolled', status.HTTP_403_FORBIDDEN)
+                        return api_error('Not enrolled in this course.', APIErrorCode.STUDENT_NOT_ENROLLED, status.HTTP_403_FORBIDDEN)
                 elif hasattr(request.user, 'lecturer'):
                     if request.user.lecturer != lecturer:
-                        return api_error('Not your course.', 'course_forbidden', status.HTTP_403_FORBIDDEN)
+                        return api_error('Not your course.', APIErrorCode.COURSE_FORBIDDEN, status.HTTP_403_FORBIDDEN)
                 else:
-                    return api_error('Unauthorized.', 'unauthorized', status.HTTP_403_FORBIDDEN)
+                    return api_error('Unauthorized.', APIErrorCode.UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
             if lecturer.latitude is None or lecturer.longitude is None:
-                return api_error('Lecturer coordinates not set.', 'lecturer_coordinates_not_set', status.HTTP_400_BAD_REQUEST)
+                return api_error('Lecturer coordinates not set.', APIErrorCode.LECTURER_COORDINATES_NOT_SET, status.HTTP_400_BAD_REQUEST)
 
             return Response({
                 'longitude': lecturer.longitude,
@@ -602,4 +606,4 @@ class LecturerLocationView(APIView):
             }, status=status.HTTP_200_OK)
 
         except AttendanceToken.DoesNotExist:
-            return api_error('Invalid or expired token.', 'invalid_or_expired_token', status.HTTP_400_BAD_REQUEST)
+            return api_error('Invalid or expired token.', APIErrorCode.INVALID_OR_EXPIRED_TOKEN, status.HTTP_400_BAD_REQUEST)

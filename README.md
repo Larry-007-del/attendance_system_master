@@ -291,6 +291,7 @@ The project is configured for [Render](https://render.com) deployment via `rende
 - **Cron session cleanup** — `close_expired_sessions --notify` runs every 30 minutes
 - **WhiteNoise** for static file serving with compression
 - **PostgreSQL** via `DATABASE_URL`
+- **Environment-aware media storage** — local filesystem in dev/tests, Cloudinary in production
 - **Safe superuser creation** — checks if user exists before creating (no crash on redeploy)
 - **HSTS**, secure cookies, SSL redirect, CSRF trusted origins in production
 - **Sentry** error tracking (if `SENTRY_DSN` is set)
