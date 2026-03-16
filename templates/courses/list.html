@@ -53,8 +53,8 @@
       class="rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-500"
     >
       <option value="">All Status</option>
-      <option value="true" {% if active_filter="" ="true" %}selected{% endif %}>Active</option>
-      <option value="false" {% if active_filter="" ="false" %}selected{% endif %}>Inactive</option>
+      <option value="true" {% if active_filter == 'true' %}selected{% endif %}>Active</option>
+      <option value="false" {% if active_filter == 'false' %}selected{% endif %}>Inactive</option>
     </select>
     <button type="submit" class="rounded-lg bg-gray-800 px-6 py-2 text-white hover:bg-gray-900">
       Filter
