@@ -1,25 +1,33 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Page Not Found - Exodus</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center">
-    <div class="text-center px-6">
-        <p class="text-indigo-600 text-6xl font-bold mb-4">404</p>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Page not found</h1>
-        <p class="text-gray-500 mb-8 max-w-md mx-auto">Sorry, the page you're looking for doesn't exist or has been moved.</p>
-        <div class="flex items-center justify-center gap-4">
-            <a href="/" class="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition">
-                Go Home
-            </a>
-            <a href="javascript:history.back()" class="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition">
-                Go Back
-            </a>
-        </div>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  </head>
+  <body class="flex min-h-screen items-center justify-center bg-gray-50">
+    <div class="px-6 text-center">
+      <p class="mb-4 text-6xl font-bold text-indigo-600">404</p>
+      <h1 class="mb-2 text-3xl font-bold text-gray-900">Page not found</h1>
+      <p class="mx-auto mb-8 max-w-md text-gray-500">
+        Sorry, the page you're looking for doesn't exist or has been moved.
+      </p>
+      <div class="flex items-center justify-center gap-4">
+        <a
+          href="/"
+          class="rounded-lg bg-indigo-600 px-6 py-2.5 font-medium text-white transition hover:bg-indigo-700"
+        >
+          Go Home
+        </a>
+        <a
+          href="javascript:history.back()"
+          class="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-700 transition hover:bg-gray-100"
+        >
+          Go Back
+        </a>
+      </div>
     </div>
-</body>
+  </body>
 </html>

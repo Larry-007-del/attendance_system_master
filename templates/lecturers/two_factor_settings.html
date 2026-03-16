@@ -1,86 +1,106 @@
-{% extends 'base.html' %}
-
-{% block title %}2FA Settings - {{ lecturer.name }}{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}2FA Settings - {{ lecturer.name }}{% endblock %} {% block
+content %}
 <div class="mb-6">
-    <a href="{% url 'frontend:lecturer_detail' lecturer.pk %}" class="text-indigo-600 hover:text-indigo-800 flex items-center mb-4">
-        <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-        Back to Lecturer Details
-    </a>
-    <h1 class="text-2xl font-bold text-gray-900">2FA Settings</h1>
-    <p class="text-gray-600 mt-1">Manage two-factor authentication for {{ lecturer.name }}</p>
+  <a
+    href="{% url 'frontend:lecturer_detail' lecturer.pk %}"
+    class="mb-4 flex items-center text-indigo-600 hover:text-indigo-800"
+  >
+    <svg class="mr-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M15 19l-7-7 7-7"
+      ></path>
+    </svg>
+    Back to Lecturer Details
+  </a>
+  <h1 class="text-2xl font-bold text-gray-900">2FA Settings</h1>
+  <p class="mt-1 text-gray-600">Manage two-factor authentication for {{ lecturer.name }}</p>
 </div>
 
-<div class="bg-white rounded-lg shadow p-6 max-w-2xl">
-    <form method="post">
-        {% csrf_token %}
-        
-        <div class="space-y-6">
-            <div>
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Global 2FA Settings</h3>
-                
-                <div class="flex items-start">
-                    <div class="flex items-center h-5">
-                        <input type="checkbox" name="require_two_factor_auth" id="require_two_factor_auth"
-                               {% if lecturer.require_two_factor_auth %}checked{% endif %}
-                               class="h-4 w-4 text-blue-600 focus:ring-indigo-500 border-gray-300 rounded">
-                    </div>
-                    <div class="ml-3">
-                        <label for="require_two_factor_auth" class="block text-sm font-medium text-gray-700">
-                            Require 2FA for all attendance sessions
-                        </label>
-                        <p class="mt-1 text-sm text-gray-500">
-                            If enabled, all future attendance sessions will require biometric/fingerprint authentication by default.
-                            This setting can be overridden per course or per session.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="pt-4 border-t border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Current Status</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">2FA Enabled</dt>
-                        <dd>
-                            {% if lecturer.is_two_factor_enabled %}
-                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">Active</span>
-                            {% else %}
-                            <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">Inactive</span>
-                            {% endif %}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Secret Key</dt>
-                        <dd class="font-mono text-sm text-gray-900">
-                            {% if lecturer.two_factor_secret %}
-                            {{ lecturer.two_factor_secret }}
-                            {% else %}
-                            Not configured
-                            {% endif %}
-                        </dd>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="pt-4 border-t border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Biometric Authentication</h3>
-                <p class="text-sm text-gray-500">
-                    Students can use their device's biometric capabilities (fingerprint, face ID, etc.) to authenticate
-                    their identity during attendance marking. This provides an extra layer of security to ensure only
-                    authorized students can mark attendance.
-                </p>
-            </div>
+<div class="max-w-2xl rounded-lg bg-white p-6 shadow">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="space-y-6">
+      <div>
+        <h3 class="mb-4 text-lg font-medium text-gray-900">Global 2FA Settings</h3>
+
+        <div class="flex items-start">
+          <div class="flex h-5 items-center">
+            <input
+              type="checkbox"
+              name="require_two_factor_auth"
+              id="require_two_factor_auth"
+              {%
+              if
+              lecturer.require_two_factor_auth
+              %}checked{%
+              endif
+              %}
+              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-indigo-500"
+            />
+          </div>
+          <div class="ml-3">
+            <label for="require_two_factor_auth" class="block text-sm font-medium text-gray-700">
+              Require 2FA for all attendance sessions
+            </label>
+            <p class="mt-1 text-sm text-gray-500">
+              If enabled, all future attendance sessions will require biometric/fingerprint
+              authentication by default. This setting can be overridden per course or per session.
+            </p>
+          </div>
         </div>
-        
-        <div class="flex justify-end gap-4 pt-6 border-t border-gray-200">
-            <a href="{% url 'frontend:lecturer_detail' lecturer.pk %}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</a>
-            <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Changes</button>
+      </div>
+
+      <div class="border-t border-gray-200 pt-4">
+        <h3 class="mb-4 text-lg font-medium text-gray-900">Current Status</h3>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <dt class="text-sm font-medium text-gray-500">2FA Enabled</dt>
+            <dd>
+              {% if lecturer.is_two_factor_enabled %}
+              <span class="rounded-full bg-green-100 px-2 py-1 text-sm text-green-800">Active</span>
+              {% else %}
+              <span class="rounded-full bg-gray-100 px-2 py-1 text-sm text-gray-800">Inactive</span>
+              {% endif %}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Secret Key</dt>
+            <dd class="font-mono text-sm text-gray-900">
+              {% if lecturer.two_factor_secret %} {{ lecturer.two_factor_secret }} {% else %} Not
+              configured {% endif %}
+            </dd>
+          </div>
         </div>
-    </form>
+      </div>
+
+      <div class="border-t border-gray-200 pt-4">
+        <h3 class="mb-4 text-lg font-medium text-gray-900">Biometric Authentication</h3>
+        <p class="text-sm text-gray-500">
+          Students can use their device's biometric capabilities (fingerprint, face ID, etc.) to
+          authenticate their identity during attendance marking. This provides an extra layer of
+          security to ensure only authorized students can mark attendance.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-4 border-t border-gray-200 pt-6">
+      <a
+        href="{% url 'frontend:lecturer_detail' lecturer.pk %}"
+        class="rounded-lg border border-gray-300 px-6 py-2 text-gray-700 hover:bg-gray-50"
+        >Cancel</a
+      >
+      <button
+        type="submit"
+        class="rounded-lg bg-indigo-600 px-6 py-2 text-white hover:bg-indigo-700"
+      >
+        Save Changes
+      </button>
+    </div>
+  </form>
 </div>
 {% endblock %}

@@ -1,208 +1,226 @@
 <!-- Stats cards widget for admin dashboard (AdminLTE/Jazzmin compatible) -->
 <div class="row mb-3">
-    <div class="col-lg-2 col-md-4 col-sm-6 col-12">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>{{ total_students }}</h3>
-                <p>Students</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-user-graduate"></i>
-            </div>
-        </div>
+  <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3>{{ total_students }}</h3>
+        <p>Students</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-user-graduate"></i>
+      </div>
     </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 col-12">
-        <div class="small-box bg-purple">
-            <div class="inner">
-                <h3>{{ total_lecturers }}</h3>
-                <p>Lecturers</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-chalkboard-teacher"></i>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+    <div class="small-box bg-purple">
+      <div class="inner">
+        <h3>{{ total_lecturers }}</h3>
+        <p>Lecturers</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-chalkboard-teacher"></i>
+      </div>
     </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 col-12">
-        <div class="small-box bg-primary">
-            <div class="inner">
-                <h3>{{ active_courses }}</h3>
-                <p>Active Courses</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-book"></i>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+    <div class="small-box bg-primary">
+      <div class="inner">
+        <h3>{{ active_courses }}</h3>
+        <p>Active Courses</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-book"></i>
+      </div>
     </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 col-12">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>{{ total_checkins }}</h3>
-                <p>Total Check-ins</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3>{{ total_checkins }}</h3>
+        <p>Total Check-ins</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
     </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 col-12">
-        <div class="small-box bg-warning">
-            <div class="inner">
-                <h3>{{ active_sessions }}</h3>
-                <p>Active Sessions</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-broadcast-tower"></i>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+    <div class="small-box bg-warning">
+      <div class="inner">
+        <h3>{{ active_sessions }}</h3>
+        <p>Active Sessions</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-broadcast-tower"></i>
+      </div>
     </div>
-    <div class="col-lg-2 col-md-4 col-sm-6 col-12">
-        <div class="small-box bg-olive">
-            <div class="inner">
-                <h3>{{ today_sessions }}</h3>
-                <p>Today's Sessions</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-calendar-day"></i>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-2 col-md-4 col-sm-6 col-12">
+    <div class="small-box bg-olive">
+      <div class="inner">
+        <h3>{{ today_sessions }}</h3>
+        <p>Today's Sessions</p>
+      </div>
+      <div class="icon">
+        <i class="fas fa-calendar-day"></i>
+      </div>
     </div>
+  </div>
 </div>
 
 <div class="row mb-3">
-    <div class="col-lg-4 col-md-6 col-12">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="mb-1">Sessions (Last 7 Days)</h6>
-                <p class="mb-0 text-bold">{{ week_sessions_total }}</p>
-            </div>
-        </div>
+  <div class="col-lg-4 col-md-6 col-12">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="mb-1">Sessions (Last 7 Days)</h6>
+        <p class="text-bold mb-0">{{ week_sessions_total }}</p>
+      </div>
     </div>
-    <div class="col-lg-4 col-md-6 col-12">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="mb-1">Check-ins (Last 7 Days)</h6>
-                <p class="mb-0 text-bold">{{ week_checkins_total }}</p>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-4 col-md-6 col-12">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="mb-1">Check-ins (Last 7 Days)</h6>
+        <p class="text-bold mb-0">{{ week_checkins_total }}</p>
+      </div>
     </div>
-    <div class="col-lg-4 col-md-12 col-12">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="mb-1">Peak Daily Sessions</h6>
-                <p class="mb-0 text-bold">{{ week_peak_sessions }}</p>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-4 col-md-12 col-12">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="mb-1">Peak Daily Sessions</h6>
+        <p class="text-bold mb-0">{{ week_peak_sessions }}</p>
+      </div>
     </div>
+  </div>
 </div>
 
 <div class="row mb-3">
-    <div class="col-lg-6 col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="m-0">Sessions Trend (7 days)</h5>
+  <div class="col-lg-6 col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="m-0">Sessions Trend (7 days)</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="sessionsTrendChart" height="140"></canvas>
+        <div class="mt-3">
+          {% for row in week_rows %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between small">
+              <span>{{ row.label }}</span>
+              <span>{{ row.sessions }} session(s)</span>
             </div>
-            <div class="card-body">
-                <canvas id="sessionsTrendChart" height="140"></canvas>
-                <div class="mt-3">
-                    {% for row in week_rows %}
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small">
-                            <span>{{ row.label }}</span>
-                            <span>{{ row.sessions }} session(s)</span>
-                        </div>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ row.session_percent }}%;" aria-valuenow="{{ row.session_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+            <div class="progress" style="height: 6px">
+              <div
+                class="progress-bar bg-primary"
+                role="progressbar"
+                style="width: {{ row.session_percent }}%;"
+                aria-valuenow="{{ row.session_percent }}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
             </div>
+          </div>
+          {% endfor %}
         </div>
+      </div>
     </div>
-    <div class="col-lg-6 col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="m-0">Check-ins Trend (7 days)</h5>
+  </div>
+  <div class="col-lg-6 col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="m-0">Check-ins Trend (7 days)</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="checkinsTrendChart" height="140"></canvas>
+        <div class="mt-3">
+          {% for row in week_rows %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between small">
+              <span>{{ row.label }}</span>
+              <span>{{ row.checkins }} check-in(s)</span>
             </div>
-            <div class="card-body">
-                <canvas id="checkinsTrendChart" height="140"></canvas>
-                <div class="mt-3">
-                    {% for row in week_rows %}
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small">
-                            <span>{{ row.label }}</span>
-                            <span>{{ row.checkins }} check-in(s)</span>
-                        </div>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ row.checkin_percent }}%;" aria-valuenow="{{ row.checkin_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+            <div class="progress" style="height: 6px">
+              <div
+                class="progress-bar bg-success"
+                role="progressbar"
+                style="width: {{ row.checkin_percent }}%;"
+                aria-valuenow="{{ row.checkin_percent }}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
             </div>
+          </div>
+          {% endfor %}
         </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-(function () {
+  (function () {
     const labels = JSON.parse('{{ session_trend_labels_json|escapejs }}');
     const sessionValues = JSON.parse('{{ session_trend_values_json|escapejs }}');
     const checkinValues = JSON.parse('{{ checkin_trend_values_json|escapejs }}');
 
     if (!window.Chart) {
-        return;
+      return;
     }
 
     const sessionCanvas = document.getElementById('sessionsTrendChart');
     const checkinCanvas = document.getElementById('checkinsTrendChart');
     if (!sessionCanvas || !checkinCanvas) {
-        return;
+      return;
     }
 
     new Chart(sessionCanvas.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Sessions',
-                data: sessionValues,
-                borderColor: '#4f46e5',
-                backgroundColor: 'rgba(79, 70, 229, 0.15)',
-                fill: true,
-                tension: 0.3,
-            }],
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Sessions',
+            data: sessionValues,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.15)',
+            fill: true,
+            tension: 0.3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, ticks: { precision: 0 } },
-            },
-            plugins: { legend: { display: false } },
-        },
+        plugins: { legend: { display: false } },
+      },
     });
 
     new Chart(checkinCanvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Check-ins',
-                data: checkinValues,
-                backgroundColor: 'rgba(16, 185, 129, 0.75)',
-                borderColor: '#10b981',
-                borderWidth: 1,
-            }],
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Check-ins',
+            data: checkinValues,
+            backgroundColor: 'rgba(16, 185, 129, 0.75)',
+            borderColor: '#10b981',
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, ticks: { precision: 0 } },
-            },
-            plugins: { legend: { display: false } },
-        },
+        plugins: { legend: { display: false } },
+      },
     });
-})();
+  })();
 </script>

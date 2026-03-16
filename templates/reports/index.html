@@ -1,241 +1,321 @@
-{% extends 'base.html' %}
-
-{% block title %}Reports - Exodus{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}Reports - Exodus{% endblock %} {% block content %}
 <div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Reports</h1>
-    <p class="text-gray-600 mt-1">Analytics and data export</p>
+  <h1 class="text-2xl font-bold text-gray-900">Reports</h1>
+  <p class="mt-1 text-gray-600">Analytics and data export</p>
 </div>
 
 <!-- Summary Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white rounded-lg shadow p-5">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-indigo-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-500">Total Sessions</p>
-                <p class="text-2xl font-bold text-gray-900">{{ total_records }}</p>
-            </div>
-        </div>
+<div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="rounded-lg bg-white p-5 shadow">
+    <div class="flex items-center">
+      <div class="flex-shrink-0 rounded-lg bg-indigo-100 p-3">
+        <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+          ></path>
+        </svg>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-500">Total Sessions</p>
+        <p class="text-2xl font-bold text-gray-900">{{ total_records }}</p>
+      </div>
     </div>
-    <div class="bg-white rounded-lg shadow p-5">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-indigo-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-500">Courses</p>
-                <p class="text-2xl font-bold text-gray-900">{{ total_courses }}</p>
-            </div>
-        </div>
+  </div>
+  <div class="rounded-lg bg-white p-5 shadow">
+    <div class="flex items-center">
+      <div class="flex-shrink-0 rounded-lg bg-indigo-100 p-3">
+        <svg class="h-6 w-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+          ></path>
+        </svg>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-500">Courses</p>
+        <p class="text-2xl font-bold text-gray-900">{{ total_courses }}</p>
+      </div>
     </div>
-    <div class="bg-white rounded-lg shadow p-5">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-500">Students</p>
-                <p class="text-2xl font-bold text-gray-900">{{ total_students }}</p>
-            </div>
-        </div>
+  </div>
+  <div class="rounded-lg bg-white p-5 shadow">
+    <div class="flex items-center">
+      <div class="flex-shrink-0 rounded-lg bg-green-100 p-3">
+        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+          ></path>
+        </svg>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-500">Students</p>
+        <p class="text-2xl font-bold text-gray-900">{{ total_students }}</p>
+      </div>
     </div>
-    <div class="bg-white rounded-lg shadow p-5">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-500">Active Now</p>
-                <p class="text-2xl font-bold text-gray-900">{{ active_sessions }}</p>
-            </div>
-        </div>
+  </div>
+  <div class="rounded-lg bg-white p-5 shadow">
+    <div class="flex items-center">
+      <div class="flex-shrink-0 rounded-lg bg-yellow-100 p-3">
+        <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          ></path>
+        </svg>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-500">Active Now</p>
+        <p class="text-2xl font-bold text-gray-900">{{ active_sessions }}</p>
+      </div>
     </div>
+  </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <!-- Weekly Trend Chart -->
-    <div class="lg:col-span-2 bg-white rounded-lg shadow">
-        <div class="p-5 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Weekly Sessions</h2>
-            <p class="text-sm text-gray-500">Attendance sessions per week (last 8 weeks)</p>
-        </div>
-        <div class="p-5">
-            <canvas id="weeklyChart" height="240"></canvas>
-        </div>
+<div class="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <!-- Weekly Trend Chart -->
+  <div class="rounded-lg bg-white shadow lg:col-span-2">
+    <div class="border-b border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900">Weekly Sessions</h2>
+      <p class="text-sm text-gray-500">Attendance sessions per week (last 8 weeks)</p>
     </div>
+    <div class="p-5">
+      <canvas id="weeklyChart" height="240"></canvas>
+    </div>
+  </div>
 
-    <!-- Course Performance -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-5 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Course Attendance</h2>
-            <p class="text-sm text-gray-500">Average attendance rate by course</p>
-        </div>
-        <div class="p-5 space-y-4 max-h-[400px] overflow-y-auto">
-            {% for cs in course_stats %}
-            <div>
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm font-medium text-gray-700 truncate" title="{{ cs.name }}">{{ cs.code }}</span>
-                    <span class="text-sm font-semibold {% if cs.rate >= 75 %}text-green-600{% elif cs.rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">{{ cs.rate }}%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div class="h-2.5 rounded-full {% if cs.rate >= 75 %}bg-green-500{% elif cs.rate >= 50 %}bg-yellow-400{% else %}bg-red-500{% endif %}" style="width: {{ cs.rate }}%"></div>
-                </div>
-                <p class="text-xs text-gray-400 mt-0.5">{{ cs.sessions }} session{{ cs.sessions|pluralize }} &middot; {{ cs.enrolled }} enrolled</p>
-            </div>
-            {% empty %}
-            <p class="text-sm text-gray-500 text-center py-4">No course data yet</p>
-            {% endfor %}
-        </div>
+  <!-- Course Performance -->
+  <div class="rounded-lg bg-white shadow">
+    <div class="border-b border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900">Course Attendance</h2>
+      <p class="text-sm text-gray-500">Average attendance rate by course</p>
     </div>
+    <div class="max-h-[400px] space-y-4 overflow-y-auto p-5">
+      {% for cs in course_stats %}
+      <div>
+        <div class="mb-1 flex items-center justify-between">
+          <span class="truncate text-sm font-medium text-gray-700" title="{{ cs.name }}"
+            >{{ cs.code }}</span
+          >
+          <span
+            class="{% if cs.rate >= 75 %}text-green-600{% elif cs.rate >= 50 %}text-yellow-600{% else %}text-red-600{% endif %} text-sm font-semibold"
+            >{{ cs.rate }}%</span
+          >
+        </div>
+        <div class="h-2.5 w-full rounded-full bg-gray-200">
+          <div
+            class="{% if cs.rate >= 75 %}bg-green-500{% elif cs.rate >= 50 %}bg-yellow-400{% else %}bg-red-500{% endif %} h-2.5 rounded-full"
+            style="width: {{ cs.rate }}%"
+          ></div>
+        </div>
+        <p class="mt-0.5 text-xs text-gray-400">
+          {{ cs.sessions }} session{{ cs.sessions|pluralize }} &middot; {{ cs.enrolled }} enrolled
+        </p>
+      </div>
+      {% empty %}
+      <p class="py-4 text-center text-sm text-gray-500">No course data yet</p>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 
 <!-- Recent Sessions & Export -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Recent Sessions -->
-    <div class="lg:col-span-2 bg-white rounded-lg shadow">
-        <div class="p-5 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Recent Sessions</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
-                        <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Present</th>
-                        <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {% for session in recent_sessions %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-3 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ session.course.name }}</div>
-                            <div class="text-xs text-gray-500">{{ session.course.course_code }}</div>
-                        </td>
-                        <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-600">{{ session.date }}</td>
-                        <td class="px-5 py-3 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ session.present_students.count }}</span>
-                        </td>
-                        <td class="px-5 py-3 whitespace-nowrap">
-                            {% if session.is_active %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-yellow-500 animate-pulse"></span>Active
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Ended</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="px-5 py-8 text-center text-sm text-gray-500">No sessions recorded yet</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <!-- Recent Sessions -->
+  <div class="rounded-lg bg-white shadow lg:col-span-2">
+    <div class="border-b border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900">Recent Sessions</h2>
     </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Course</th>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Date</th>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Present</th>
+            <th class="px-5 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for session in recent_sessions %}
+          <tr class="hover:bg-gray-50">
+            <td class="whitespace-nowrap px-5 py-3">
+              <div class="text-sm font-medium text-gray-900">{{ session.course.name }}</div>
+              <div class="text-xs text-gray-500">{{ session.course.course_code }}</div>
+            </td>
+            <td class="whitespace-nowrap px-5 py-3 text-sm text-gray-600">{{ session.date }}</td>
+            <td class="whitespace-nowrap px-5 py-3">
+              <span
+                class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800"
+                >{{ session.present_students.count }}</span
+              >
+            </td>
+            <td class="whitespace-nowrap px-5 py-3">
+              {% if session.is_active %}
+              <span
+                class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800"
+              >
+                <span class="mr-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-500"></span
+                >Active
+              </span>
+              {% else %}
+              <span
+                class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600"
+                >Ended</span
+              >
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="px-5 py-8 text-center text-sm text-gray-500">
+              No sessions recorded yet
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    <!-- Export Panel -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-5 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Export Data</h2>
-            <p class="text-sm text-gray-500">Download attendance records</p>
-        </div>
-        <div class="p-5">
-            <form method="get" action="{% url 'frontend:reports_export' %}" class="space-y-4">
-                <div>
-                    <label for="course" class="block text-sm font-medium text-gray-700 mb-1">Course</label>
-                    <select name="course" id="course" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">All Courses</option>
-                        {% for course in courses %}
-                        <option value="{{ course.id }}">{{ course.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="date_from" class="block text-sm font-medium text-gray-700 mb-1">From</label>
-                    <input type="date" name="date_from" id="date_from" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div>
-                    <label for="date_to" class="block text-sm font-medium text-gray-700 mb-1">To</label>
-                    <input type="date" name="date_to" id="date_to" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div class="space-y-2 pt-2">
-                    <button type="submit" name="format" value="csv" class="w-full flex items-center justify-center px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition">
-                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Download CSV
-                    </button>
-                    <button type="submit" name="format" value="xlsx" class="w-full flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium transition">
-                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Download Excel
-                    </button>
-                </div>
-            </form>
-        </div>
+  <!-- Export Panel -->
+  <div class="rounded-lg bg-white shadow">
+    <div class="border-b border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900">Export Data</h2>
+      <p class="text-sm text-gray-500">Download attendance records</p>
     </div>
+    <div class="p-5">
+      <form method="get" action="{% url 'frontend:reports_export' %}" class="space-y-4">
+        <div>
+          <label for="course" class="mb-1 block text-sm font-medium text-gray-700">Course</label>
+          <select
+            name="course"
+            id="course"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+          >
+            <option value="">All Courses</option>
+            {% for course in courses %}
+            <option value="{{ course.id }}">{{ course.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="date_from" class="mb-1 block text-sm font-medium text-gray-700">From</label>
+          <input
+            type="date"
+            name="date_from"
+            id="date_from"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
+        <div>
+          <label for="date_to" class="mb-1 block text-sm font-medium text-gray-700">To</label>
+          <input
+            type="date"
+            name="date_to"
+            id="date_to"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
+        <div class="space-y-2 pt-2">
+          <button
+            type="submit"
+            name="format"
+            value="csv"
+            class="flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-green-700"
+          >
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            Download CSV
+          </button>
+          <button
+            type="submit"
+            name="format"
+            value="xlsx"
+            class="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+          >
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            Download Excel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('weeklyChart').getContext('2d');
-    const labels = {{ week_labels|safe }};
-    const data = {{ week_counts|safe }};
-    
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Sessions',
-                data: data,
-                backgroundColor: 'rgba(99, 102, 241, 0.7)',
-                borderColor: 'rgb(99, 102, 241)',
-                borderWidth: 1,
-                borderRadius: 6,
-                hoverBackgroundColor: 'rgba(99, 102, 241, 0.9)',
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#1f2937',
-                    titleFont: { size: 13 },
-                    bodyFont: { size: 12 },
-                    padding: 10,
-                    cornerRadius: 8,
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { 
-                        stepSize: 1,
-                        font: { size: 12 },
-                        color: '#6b7280'
-                    },
-                    grid: { color: '#f3f4f6' }
-                },
-                x: {
-                    ticks: {
-                        font: { size: 11 },
-                        color: '#6b7280'
-                    },
-                    grid: { display: false }
-                }
-            }
-        }
-    });
-});
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('weeklyChart').getContext('2d');
+      const labels = {{ week_labels|safe }};
+      const data = {{ week_counts|safe }};
+
+      new Chart(ctx, {
+          type: 'bar',
+          data: {
+              labels: labels,
+              datasets: [{
+                  label: 'Sessions',
+                  data: data,
+                  backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                  borderColor: 'rgb(99, 102, 241)',
+                  borderWidth: 1,
+                  borderRadius: 6,
+                  hoverBackgroundColor: 'rgba(99, 102, 241, 0.9)',
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                      backgroundColor: '#1f2937',
+                      titleFont: { size: 13 },
+                      bodyFont: { size: 12 },
+                      padding: 10,
+                      cornerRadius: 8,
+                  }
+              },
+              scales: {
+                  y: {
+                      beginAtZero: true,
+                      ticks: {
+                          stepSize: 1,
+                          font: { size: 12 },
+                          color: '#6b7280'
+                      },
+                      grid: { color: '#f3f4f6' }
+                  },
+                  x: {
+                      ticks: {
+                          font: { size: 11 },
+                          color: '#6b7280'
+                      },
+                      grid: { display: false }
+                  }
+              }
+          }
+      });
+  });
 </script>
 {% endblock %}

@@ -1,90 +1,144 @@
-{% extends 'base.html' %}
-
-{% block title %}Lecturers - Exodus{% endblock %}
-
-{% block content %}
-<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">Lecturers</h1>
-        <p class="text-gray-600 mt-1">Manage lecturer records</p>
-    </div>
-    <a href="{% url 'frontend:lecturer_create' %}" class="mt-4 md:mt-0 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-        </svg>
-        Add Lecturer
-    </a>
+{% extends 'base.html' %} {% block title %}Lecturers - Exodus{% endblock %} {% block content %}
+<div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Lecturers</h1>
+    <p class="mt-1 text-gray-600">Manage lecturer records</p>
+  </div>
+  <a
+    href="{% url 'frontend:lecturer_create' %}"
+    class="mt-4 inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 md:mt-0"
+  >
+    <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 4v16m8-8H4"
+      ></path>
+    </svg>
+    Add Lecturer
+  </a>
 </div>
 
 <!-- Search -->
-<div class="bg-white rounded-lg shadow mb-6 p-4">
-    <form method="get" class="flex flex-col md:flex-row gap-4">
-        <div class="flex-1">
-            <input type="text" name="q" value="{{ query }}" placeholder="Search by name, staff ID, or department..."
-                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <button type="submit" class="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">
-            Search
-        </button>
-        {% if query %}
-        <a href="{% url 'frontend:lecturer_list' %}" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            Clear
-        </a>
-        {% endif %}
-    </form>
+<div class="mb-6 rounded-lg bg-white p-4 shadow">
+  <form method="get" class="flex flex-col gap-4 md:flex-row">
+    <div class="flex-1">
+      <input
+        type="text"
+        name="q"
+        value="{{ query }}"
+        placeholder="Search by name, staff ID, or department..."
+        class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+      />
+    </div>
+    <button type="submit" class="rounded-lg bg-gray-800 px-6 py-2 text-white hover:bg-gray-900">
+      Search
+    </button>
+    {% if query %}
+    <a
+      href="{% url 'frontend:lecturer_list' %}"
+      class="rounded-lg border border-gray-300 px-6 py-2 hover:bg-gray-50"
+    >
+      Clear
+    </a>
+    {% endif %}
+  </form>
 </div>
 
 <!-- Lecturers Table -->
-<div class="bg-white rounded-lg shadow overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200" id="lecturer-table">
-                {% for lecturer in lecturers %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                                <span class="text-indigo-600 font-bold">{{ lecturer.name|first|upper }}</span>
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">{{ lecturer.name }}</div>
-                                <div class="text-sm text-gray-500">{{ lecturer.user.email }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ lecturer.staff_id }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ lecturer.department|default:"-" }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ lecturer.phone_number|default:"-" }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ lecturer.courses.count }} course{{ lecturer.courses.count|pluralize }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <a href="{% url 'frontend:lecturer_detail' lecturer.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
-                        <a href="{% url 'frontend:lecturer_edit' lecturer.id %}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
-                        <a href="{% url 'frontend:lecturer_delete' lecturer.id %}" class="text-red-600 hover:text-red-900">Delete</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                        No lecturers found. {% if query %}Try a different search.{% else %}Add your first lecturer!{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<div class="overflow-hidden rounded-lg bg-white shadow">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Name
+          </th>
+          <th
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Staff ID
+          </th>
+          <th
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Department
+          </th>
+          <th
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Phone
+          </th>
+          <th
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Courses
+          </th>
+          <th
+            class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Actions
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white" id="lecturer-table">
+        {% for lecturer in lecturers %}
+        <tr class="hover:bg-gray-50">
+          <td class="whitespace-nowrap px-6 py-4">
+            <div class="flex items-center">
+              <div
+                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100"
+              >
+                <span class="font-bold text-indigo-600">{{ lecturer.name|first|upper }}</span>
+              </div>
+              <div class="ml-4">
+                <div class="text-sm font-medium text-gray-900">{{ lecturer.name }}</div>
+                <div class="text-sm text-gray-500">{{ lecturer.user.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">{{ lecturer.staff_id }}</td>
+          <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+            {{ lecturer.department|default:"-" }}
+          </td>
+          <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+            {{ lecturer.phone_number|default:"-" }}
+          </td>
+          <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+            {{ lecturer.courses.count }} course{{ lecturer.courses.count|pluralize }}
+          </td>
+          <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+            <a
+              href="{% url 'frontend:lecturer_detail' lecturer.id %}"
+              class="mr-3 text-indigo-600 hover:text-indigo-900"
+              >View</a
+            >
+            <a
+              href="{% url 'frontend:lecturer_edit' lecturer.id %}"
+              class="mr-3 text-blue-600 hover:text-blue-900"
+              >Edit</a
+            >
+            <a
+              href="{% url 'frontend:lecturer_delete' lecturer.id %}"
+              class="text-red-600 hover:text-red-900"
+              >Delete</a
+            >
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+            No lecturers found. {% if query %}Try a different search.{% else %}Add your first
+            lecturer!{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-{% include 'partials/pagination.html' with page_obj=lecturers %}
-{% endblock %}
+{% include 'partials/pagination.html' with page_obj=lecturers %} {% endblock %}

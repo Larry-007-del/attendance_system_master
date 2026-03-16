@@ -1,406 +1,538 @@
-{% extends 'base.html' %}
-
-{% block title %}2FA Setup - Exodus{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}2FA Setup - Exodus{% endblock %} {% block content %}
 <div class="mb-6">
-    <a href="{% url 'frontend:profile' %}" class="text-indigo-600 hover:text-indigo-800 flex items-center mb-4">
-        <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-        Back to Profile
-    </a>
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Two-Factor Authentication Setup</h1>
-    <p class="text-gray-600 dark:text-gray-400 mt-1">Set up fingerprint or OTP to verify your identity when marking attendance.</p>
+  <a
+    href="{% url 'frontend:profile' %}"
+    class="mb-4 flex items-center text-indigo-600 hover:text-indigo-800"
+  >
+    <svg class="mr-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M15 19l-7-7 7-7"
+      ></path>
+    </svg>
+    Back to Profile
+  </a>
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Two-Factor Authentication Setup</h1>
+  <p class="mt-1 text-gray-600 dark:text-gray-400">
+    Set up fingerprint or OTP to verify your identity when marking attendance.
+  </p>
 </div>
 
 {% if messages %}
 <div class="mb-4">
-    {% for message in messages %}
-    <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-        {{ message }}
-    </div>
-    {% endfor %}
+  {% for message in messages %}
+  <div
+    class="{% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %} rounded-lg p-4"
+  >
+    {{ message }}
+  </div>
+  {% endfor %}
 </div>
 {% endif %}
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6" x-data="twoFactorSetup()">
-
-    <!-- ==================== Fingerprint (WebAuthn) Section ==================== -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div class="flex items-center mb-4">
-            <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mr-3">
-                <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path>
-                </svg>
-            </div>
-            <div>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Fingerprint / Biometric</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Use your device's fingerprint or face recognition</p>
-            </div>
-        </div>
-
-        <!-- Support detection message -->
-        <template x-if="!webauthnSupported">
-            <div class="p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg mb-4">
-                <p class="text-sm text-yellow-800 dark:text-yellow-300">
-                    <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                    Your browser or device does not support biometric authentication. Please use OTP instead.
-                </p>
-            </div>
-        </template>
-
-        <!-- Registered credentials list -->
-        {% if credentials %}
-        <div class="mb-4">
-            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Registered Credentials</h3>
-            <ul class="space-y-2">
-                {% for cred in credentials %}
-                <li class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-sm text-gray-800 dark:text-gray-200">{{ cred.name }}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs text-gray-400">{{ cred.created_at|date:"M d, Y" }}</span>
-                        <form method="post" action="{% url 'frontend:webauthn_remove' %}" class="inline"
-                              onsubmit="return confirm('Remove this credential?')">
-                            {% csrf_token %}
-                            <input type="hidden" name="credential_id" value="{{ cred.credential_id }}">
-                            <button type="submit" class="text-red-500 hover:text-red-700 text-sm">Remove</button>
-                        </form>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        <!-- Register new fingerprint button -->
-        <template x-if="webauthnSupported">
-            <div>
-                <button @click="registerFingerprint()"
-                        :disabled="registering"
-                        class="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center">
-                    <template x-if="!registering">
-                        <span class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            Register Fingerprint
-                        </span>
-                    </template>
-                    <template x-if="registering">
-                        <span class="flex items-center">
-                            <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                            Touch your sensor...
-                        </span>
-                    </template>
-                </button>
-                <!-- Status message -->
-                <template x-if="webauthnMsg">
-                    <p class="mt-2 text-sm text-center" :class="webauthnOk ? 'text-green-600' : 'text-red-600'" x-text="webauthnMsg"></p>
-                </template>
-            </div>
-        </template>
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2" x-data="twoFactorSetup()">
+  <!-- ==================== Fingerprint (WebAuthn) Section ==================== -->
+  <div class="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+    <div class="mb-4 flex items-center">
+      <div
+        class="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900"
+      >
+        <svg
+          class="h-5 w-5 text-indigo-600 dark:text-indigo-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"
+          ></path>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Fingerprint / Biometric</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Use your device's fingerprint or face recognition
+        </p>
+      </div>
     </div>
 
-    <!-- ==================== OTP Section ==================== -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div class="flex items-center mb-4">
-            <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mr-3">
-                <svg class="w-5 h-5 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-            </div>
-            <div>
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">One-Time Password (OTP)</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Use an authenticator app like Google Authenticator</p>
-            </div>
-        </div>
+    <!-- Support detection message -->
+    <template x-if="!webauthnSupported">
+      <div
+        class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-700 dark:bg-yellow-900/30"
+      >
+        <p class="text-sm text-yellow-800 dark:text-yellow-300">
+          <svg class="mr-1 inline h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          Your browser or device does not support biometric authentication. Please use OTP instead.
+        </p>
+      </div>
+    </template>
 
-        {% if has_otp %}
-        <!-- OTP is configured -->
-        <div class="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg mb-4">
-            <p class="text-sm text-green-800 dark:text-green-300 flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
-                OTP is enabled and active
-            </p>
-        </div>
-        <form method="post" action="{% url 'frontend:student_disable_otp' %}"
-              onsubmit="return confirm('Disable OTP authentication? You will need to set it up again.')">
-            {% csrf_token %}
-            <button type="submit"
-                    class="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
-                Disable OTP
-            </button>
-        </form>
-
-        {% else %}
-        <!-- OTP setup flow -->
-        <template x-if="!otpSetupStarted">
-            <button @click="beginOtpSetup()"
-                    :disabled="otpLoading"
-                    class="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold">
-                <span x-show="!otpLoading">Set Up OTP</span>
-                <span x-show="otpLoading" class="flex items-center justify-center">
-                    <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    Generating...
-                </span>
-            </button>
-        </template>
-
-        <template x-if="otpSetupStarted">
-            <div>
-                <!-- QR Code -->
-                <div class="text-center mb-4">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Scan this QR code with your authenticator app:</p>
-                    <div class="inline-block p-3 bg-white rounded-lg shadow-sm" x-html="otpQrSvg"></div>
-                </div>
-
-                <!-- Manual secret -->
-                <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Or enter this key manually:</p>
-                    <code class="text-sm font-mono text-gray-900 dark:text-gray-100 select-all break-all" x-text="otpSecret"></code>
-                </div>
-
-                <!-- Verification input -->
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enter the 6-digit code from your app to verify:</label>
-                    <input type="text" x-model="otpCode" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-                           class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-purple-500 focus:border-purple-500 font-mono text-center text-lg dark:bg-gray-700 dark:text-white"
-                           placeholder="000000"
-                           @keyup.enter="verifyOtp()">
-                </div>
-                <button @click="verifyOtp()"
-                        :disabled="otpVerifying || otpCode.length !== 6"
-                        class="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold">
-                    <span x-show="!otpVerifying">Verify & Enable OTP</span>
-                    <span x-show="otpVerifying">Verifying...</span>
-                </button>
-
-                <!-- OTP status message -->
-                <template x-if="otpMsg">
-                    <p class="mt-2 text-sm text-center" :class="otpOk ? 'text-green-600' : 'text-red-600'" x-text="otpMsg"></p>
-                </template>
-            </div>
-        </template>
-        {% endif %}
+    <!-- Registered credentials list -->
+    {% if credentials %}
+    <div class="mb-4">
+      <h3 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        Registered Credentials
+      </h3>
+      <ul class="space-y-2">
+        {% for cred in credentials %}
+        <li class="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+          <div class="flex items-center">
+            <svg class="mr-2 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span class="text-sm text-gray-800 dark:text-gray-200">{{ cred.name }}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-400">{{ cred.created_at|date:"M d, Y" }}</span>
+            <form
+              method="post"
+              action="{% url 'frontend:webauthn_remove' %}"
+              class="inline"
+              onsubmit="return confirm('Remove this credential?');"
+            >
+              {% csrf_token %}
+              <input type="hidden" name="credential_id" value="{{ cred.credential_id }}" />
+              <button type="submit" class="text-sm text-red-500 hover:text-red-700">Remove</button>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
     </div>
+    {% endif %}
+
+    <!-- Register new fingerprint button -->
+    <template x-if="webauthnSupported">
+      <div>
+        <button
+          @click="registerFingerprint()"
+          :disabled="registering"
+          class="flex w-full items-center justify-center rounded-lg bg-indigo-600 py-3 font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+        >
+          <template x-if="!registering">
+            <span class="flex items-center">
+              <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                ></path>
+              </svg>
+              Register Fingerprint
+            </span>
+          </template>
+          <template x-if="registering">
+            <span class="flex items-center">
+              <svg class="mr-2 h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                ></path>
+              </svg>
+              Touch your sensor...
+            </span>
+          </template>
+        </button>
+        <!-- Status message -->
+        <template x-if="webauthnMsg">
+          <p
+            class="mt-2 text-center text-sm"
+            :class="webauthnOk ? 'text-green-600' : 'text-red-600'"
+            x-text="webauthnMsg"
+          ></p>
+        </template>
+      </div>
+    </template>
+  </div>
+
+  <!-- ==================== OTP Section ==================== -->
+  <div class="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+    <div class="mb-4 flex items-center">
+      <div
+        class="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900"
+      >
+        <svg
+          class="h-5 w-5 text-purple-600 dark:text-purple-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          ></path>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">One-Time Password (OTP)</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Use an authenticator app like Google Authenticator
+        </p>
+      </div>
+    </div>
+
+    {% if has_otp %}
+    <!-- OTP is configured -->
+    <div
+      class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-700 dark:bg-green-900/30"
+    >
+      <p class="flex items-center text-sm text-green-800 dark:text-green-300">
+        <svg class="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          ></path>
+        </svg>
+        OTP is enabled and active
+      </p>
+    </div>
+    <form
+      method="post"
+      action="{% url 'frontend:student_disable_otp' %}"
+      onsubmit="return confirm('Disable OTP authentication? You will need to set it up again.');"
+    >
+      {% csrf_token %}
+      <button
+        type="submit"
+        class="w-full rounded-lg bg-red-600 py-3 font-semibold text-white transition-colors hover:bg-red-700"
+      >
+        Disable OTP
+      </button>
+    </form>
+
+    {% else %}
+    <!-- OTP setup flow -->
+    <template x-if="!otpSetupStarted">
+      <button
+        @click="beginOtpSetup()"
+        :disabled="otpLoading"
+        class="w-full rounded-lg bg-purple-600 py-3 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+      >
+        <span x-show="!otpLoading">Set Up OTP</span>
+        <span x-show="otpLoading" class="flex items-center justify-center">
+          <svg class="mr-2 h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            ></path>
+          </svg>
+          Generating...
+        </span>
+      </button>
+    </template>
+
+    <template x-if="otpSetupStarted">
+      <div>
+        <!-- QR Code -->
+        <div class="mb-4 text-center">
+          <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+            Scan this QR code with your authenticator app:
+          </p>
+          <div class="inline-block rounded-lg bg-white p-3 shadow-sm" x-html="otpQrSvg"></div>
+        </div>
+
+        <!-- Manual secret -->
+        <div class="mb-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
+          <p class="mb-1 text-xs text-gray-500 dark:text-gray-400">Or enter this key manually:</p>
+          <code
+            class="select-all break-all font-mono text-sm text-gray-900 dark:text-gray-100"
+            x-text="otpSecret"
+          ></code>
+        </div>
+
+        <!-- Verification input -->
+        <div class="mb-3">
+          <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Enter the 6-digit code from your app to verify:</label
+          >
+          <input
+            type="text"
+            x-model="otpCode"
+            maxlength="6"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="w-full rounded-lg border border-gray-300 px-4 py-3 text-center font-mono text-lg focus:border-purple-500 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            placeholder="000000"
+            @keyup.enter="verifyOtp()"
+          />
+        </div>
+        <button
+          @click="verifyOtp()"
+          :disabled="otpVerifying || otpCode.length !== 6"
+          class="w-full rounded-lg bg-purple-600 py-3 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+        >
+          <span x-show="!otpVerifying">Verify & Enable OTP</span>
+          <span x-show="otpVerifying">Verifying...</span>
+        </button>
+
+        <!-- OTP status message -->
+        <template x-if="otpMsg">
+          <p
+            class="mt-2 text-center text-sm"
+            :class="otpOk ? 'text-green-600' : 'text-red-600'"
+            x-text="otpMsg"
+          ></p>
+        </template>
+      </div>
+    </template>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Status summary -->
-<div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">2FA Status</h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="flex items-center p-3 rounded-lg {% if has_webauthn %}bg-green-50 dark:bg-green-900/20{% else %}bg-gray-50 dark:bg-gray-700{% endif %}">
-            <span class="w-3 h-3 rounded-full mr-3 {% if has_webauthn %}bg-green-500{% else %}bg-gray-300{% endif %}"></span>
-            <span class="text-sm {% if has_webauthn %}text-green-800 dark:text-green-300{% else %}text-gray-500 dark:text-gray-400{% endif %}">
-                Fingerprint: {% if has_webauthn %}Active ({{ credentials.count }} credential{{ credentials.count|pluralize }}){% else %}Not configured{% endif %}
-            </span>
-        </div>
-        <div class="flex items-center p-3 rounded-lg {% if has_otp %}bg-green-50 dark:bg-green-900/20{% else %}bg-gray-50 dark:bg-gray-700{% endif %}">
-            <span class="w-3 h-3 rounded-full mr-3 {% if has_otp %}bg-green-500{% else %}bg-gray-300{% endif %}"></span>
-            <span class="text-sm {% if has_otp %}text-green-800 dark:text-green-300{% else %}text-gray-500 dark:text-gray-400{% endif %}">
-                OTP: {% if has_otp %}Active{% else %}Not configured{% endif %}
-            </span>
-        </div>
+<div class="mt-6 rounded-lg bg-white p-6 shadow dark:bg-gray-800">
+  <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">2FA Status</h3>
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div
+      class="{% if has_webauthn %}bg-green-50 dark:bg-green-900/20{% else %}bg-gray-50 dark:bg-gray-700{% endif %} flex items-center rounded-lg p-3"
+    >
+      <span
+        class="{% if has_webauthn %}bg-green-500{% else %}bg-gray-300{% endif %} mr-3 h-3 w-3 rounded-full"
+      ></span>
+      <span
+        class="{% if has_webauthn %}text-green-800 dark:text-green-300{% else %}text-gray-500 dark:text-gray-400{% endif %} text-sm"
+      >
+        Fingerprint: {% if has_webauthn %}Active ({{ credentials.count }} credential{{
+        credentials.count|pluralize }}){% else %}Not configured{% endif %}
+      </span>
     </div>
-    {% if not has_webauthn and not has_otp %}
-    <p class="mt-3 text-sm text-yellow-600 dark:text-yellow-400">
-        You have no 2FA method configured. If a lecturer enables 2FA for attendance, you will be redirected here to set it up.
-    </p>
-    {% endif %}
+    <div
+      class="{% if has_otp %}bg-green-50 dark:bg-green-900/20{% else %}bg-gray-50 dark:bg-gray-700{% endif %} flex items-center rounded-lg p-3"
+    >
+      <span
+        class="{% if has_otp %}bg-green-500{% else %}bg-gray-300{% endif %} mr-3 h-3 w-3 rounded-full"
+      ></span>
+      <span
+        class="{% if has_otp %}text-green-800 dark:text-green-300{% else %}text-gray-500 dark:text-gray-400{% endif %} text-sm"
+      >
+        OTP: {% if has_otp %}Active{% else %}Not configured{% endif %}
+      </span>
+    </div>
+  </div>
+  {% if not has_webauthn and not has_otp %}
+  <p class="mt-3 text-sm text-yellow-600 dark:text-yellow-400">
+    You have no 2FA method configured. If a lecturer enables 2FA for attendance, you will be
+    redirected here to set it up.
+  </p>
+  {% endif %}
 </div>
 
 <script>
-function twoFactorSetup() {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
-                    || '{{ csrf_token }}';
+  function twoFactorSetup() {
+    const csrfToken =
+      document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
 
     return {
-        // WebAuthn state
-        webauthnSupported: !!window.PublicKeyCredential,
-        registering: false,
-        webauthnMsg: '',
-        webauthnOk: false,
+      // WebAuthn state
+      webauthnSupported: !!window.PublicKeyCredential,
+      registering: false,
+      webauthnMsg: '',
+      webauthnOk: false,
 
-        // OTP state
-        otpSetupStarted: false,
-        otpLoading: false,
-        otpQrSvg: '',
-        otpSecret: '',
-        otpCode: '',
-        otpVerifying: false,
-        otpMsg: '',
-        otpOk: false,
+      // OTP state
+      otpSetupStarted: false,
+      otpLoading: false,
+      otpQrSvg: '',
+      otpSecret: '',
+      otpCode: '',
+      otpVerifying: false,
+      otpMsg: '',
+      otpOk: false,
 
-        // ========== Base64url helpers ==========
-        base64urlToBuffer(base64url) {
-            const padding = '='.repeat((4 - base64url.length % 4) % 4);
-            const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/') + padding;
-            const binary = atob(base64);
-            const buffer = new ArrayBuffer(binary.length);
-            const view = new Uint8Array(buffer);
-            for (let i = 0; i < binary.length; i++) {
-                view[i] = binary.charCodeAt(i);
-            }
-            return buffer;
-        },
+      // ========== Base64url helpers ==========
+      base64urlToBuffer(base64url) {
+        const padding = '='.repeat((4 - (base64url.length % 4)) % 4);
+        const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/') + padding;
+        const binary = atob(base64);
+        const buffer = new ArrayBuffer(binary.length);
+        const view = new Uint8Array(buffer);
+        for (let i = 0; i < binary.length; i++) {
+          view[i] = binary.charCodeAt(i);
+        }
+        return buffer;
+      },
 
-        bufferToBase64url(buffer) {
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.length; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        },
+      bufferToBase64url(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      },
 
-        // ========== Fingerprint Registration ==========
-        async registerFingerprint() {
-            this.registering = true;
-            this.webauthnMsg = '';
+      // ========== Fingerprint Registration ==========
+      async registerFingerprint() {
+        this.registering = true;
+        this.webauthnMsg = '';
 
-            try {
-                // Step 1: Get registration options from server
-                const optionsResp = await fetch('{% url "frontend:webauthn_register_begin" %}', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken },
-                });
-                if (!optionsResp.ok) {
-                    const err = await optionsResp.json();
-                    throw new Error(err.error || 'Failed to get registration options');
-                }
-                const options = await optionsResp.json();
+        try {
+          // Step 1: Get registration options from server
+          const optionsResp = await fetch('{% url "frontend:webauthn_register_begin" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+          });
+          if (!optionsResp.ok) {
+            const err = await optionsResp.json();
+            throw new Error(err.error || 'Failed to get registration options');
+          }
+          const options = await optionsResp.json();
 
-                // Step 2: Convert base64url fields to ArrayBuffer for WebAuthn API
-                const publicKey = {
-                    ...options,
-                    challenge: this.base64urlToBuffer(options.challenge),
-                    user: {
-                        ...options.user,
-                        id: this.base64urlToBuffer(options.user.id),
-                    },
-                };
-                if (options.excludeCredentials) {
-                    publicKey.excludeCredentials = options.excludeCredentials.map(c => ({
-                        ...c,
-                        id: this.base64urlToBuffer(c.id),
-                    }));
-                }
+          // Step 2: Convert base64url fields to ArrayBuffer for WebAuthn API
+          const publicKey = {
+            ...options,
+            challenge: this.base64urlToBuffer(options.challenge),
+            user: {
+              ...options.user,
+              id: this.base64urlToBuffer(options.user.id),
+            },
+          };
+          if (options.excludeCredentials) {
+            publicKey.excludeCredentials = options.excludeCredentials.map((c) => ({
+              ...c,
+              id: this.base64urlToBuffer(c.id),
+            }));
+          }
 
-                // Step 3: Prompt user for biometric
-                const credential = await navigator.credentials.create({ publicKey });
+          // Step 3: Prompt user for biometric
+          const credential = await navigator.credentials.create({ publicKey });
 
-                // Step 4: Send response to server
-                const body = {
-                    id: credential.id,
-                    rawId: this.bufferToBase64url(credential.rawId),
-                    type: credential.type,
-                    response: {
-                        clientDataJSON: this.bufferToBase64url(credential.response.clientDataJSON),
-                        attestationObject: this.bufferToBase64url(credential.response.attestationObject),
-                    },
-                };
+          // Step 4: Send response to server
+          const body = {
+            id: credential.id,
+            rawId: this.bufferToBase64url(credential.rawId),
+            type: credential.type,
+            response: {
+              clientDataJSON: this.bufferToBase64url(credential.response.clientDataJSON),
+              attestationObject: this.bufferToBase64url(credential.response.attestationObject),
+            },
+          };
 
-                const verifyResp = await fetch('{% url "frontend:webauthn_register_complete" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                    },
-                    body: JSON.stringify(body),
-                });
+          const verifyResp = await fetch('{% url "frontend:webauthn_register_complete" %}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify(body),
+          });
 
-                const result = await verifyResp.json();
-                if (verifyResp.ok && result.success) {
-                    this.webauthnMsg = result.message || 'Fingerprint registered!';
-                    this.webauthnOk = true;
-                    setTimeout(() => location.reload(), 1200);
-                } else {
-                    throw new Error(result.error || 'Registration failed');
-                }
-            } catch (e) {
-                if (e.name === 'NotAllowedError') {
-                    this.webauthnMsg = 'Authentication was cancelled or timed out.';
-                } else if (e.name === 'InvalidStateError') {
-                    this.webauthnMsg = 'This credential is already registered.';
-                } else {
-                    this.webauthnMsg = e.message || 'Registration failed. Please try again.';
-                }
-                this.webauthnOk = false;
-            } finally {
-                this.registering = false;
-            }
-        },
+          const result = await verifyResp.json();
+          if (verifyResp.ok && result.success) {
+            this.webauthnMsg = result.message || 'Fingerprint registered!';
+            this.webauthnOk = true;
+            setTimeout(() => location.reload(), 1200);
+          } else {
+            throw new Error(result.error || 'Registration failed');
+          }
+        } catch (e) {
+          if (e.name === 'NotAllowedError') {
+            this.webauthnMsg = 'Authentication was cancelled or timed out.';
+          } else if (e.name === 'InvalidStateError') {
+            this.webauthnMsg = 'This credential is already registered.';
+          } else {
+            this.webauthnMsg = e.message || 'Registration failed. Please try again.';
+          }
+          this.webauthnOk = false;
+        } finally {
+          this.registering = false;
+        }
+      },
 
-        // ========== OTP Setup ==========
-        async beginOtpSetup() {
-            this.otpLoading = true;
-            this.otpMsg = '';
+      // ========== OTP Setup ==========
+      async beginOtpSetup() {
+        this.otpLoading = true;
+        this.otpMsg = '';
 
-            try {
-                const resp = await fetch('{% url "frontend:student_setup_otp" %}', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken },
-                });
-                if (!resp.ok) {
-                    const err = await resp.json();
-                    throw new Error(err.error || 'Failed to generate OTP');
-                }
-                const data = await resp.json();
-                this.otpQrSvg = data.qr_svg;
-                this.otpSecret = data.secret;
-                this.otpSetupStarted = true;
-            } catch (e) {
-                this.otpMsg = e.message || 'Failed to set up OTP.';
-                this.otpOk = false;
-            } finally {
-                this.otpLoading = false;
-            }
-        },
+        try {
+          const resp = await fetch('{% url "frontend:student_setup_otp" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+          });
+          if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error || 'Failed to generate OTP');
+          }
+          const data = await resp.json();
+          this.otpQrSvg = data.qr_svg;
+          this.otpSecret = data.secret;
+          this.otpSetupStarted = true;
+        } catch (e) {
+          this.otpMsg = e.message || 'Failed to set up OTP.';
+          this.otpOk = false;
+        } finally {
+          this.otpLoading = false;
+        }
+      },
 
-        async verifyOtp() {
-            if (this.otpCode.length !== 6) return;
-            this.otpVerifying = true;
-            this.otpMsg = '';
+      async verifyOtp() {
+        if (this.otpCode.length !== 6) return;
+        this.otpVerifying = true;
+        this.otpMsg = '';
 
-            try {
-                const formData = new FormData();
-                formData.append('otp_code', this.otpCode);
+        try {
+          const formData = new FormData();
+          formData.append('otp_code', this.otpCode);
 
-                const resp = await fetch('{% url "frontend:student_verify_otp" %}', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken },
-                    body: formData,
-                });
-                const data = await resp.json();
-                if (resp.ok && data.success) {
-                    this.otpMsg = data.message || 'OTP enabled!';
-                    this.otpOk = true;
-                    setTimeout(() => location.reload(), 1200);
-                } else {
-                    throw new Error(data.error || 'Verification failed');
-                }
-            } catch (e) {
-                this.otpMsg = e.message || 'Invalid code.';
-                this.otpOk = false;
-            } finally {
-                this.otpVerifying = false;
-            }
-        },
+          const resp = await fetch('{% url "frontend:student_verify_otp" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: formData,
+          });
+          const data = await resp.json();
+          if (resp.ok && data.success) {
+            this.otpMsg = data.message || 'OTP enabled!';
+            this.otpOk = true;
+            setTimeout(() => location.reload(), 1200);
+          } else {
+            throw new Error(data.error || 'Verification failed');
+          }
+        } catch (e) {
+          this.otpMsg = e.message || 'Invalid code.';
+          this.otpOk = false;
+        } finally {
+          this.otpVerifying = false;
+        }
+      },
     };
-}
+  }
 </script>
 {% endblock %}

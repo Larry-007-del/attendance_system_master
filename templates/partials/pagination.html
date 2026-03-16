@@ -1,42 +1,68 @@
 {% if page_obj.has_other_pages %}
-<nav class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow" aria-label="Pagination">
-    <div class="hidden sm:block">
-        <p class="text-sm text-gray-700">
-            Showing <span class="font-medium">{{ page_obj.start_index }}</span> to
-            <span class="font-medium">{{ page_obj.end_index }}</span> of
-            <span class="font-medium">{{ page_obj.paginator.count }}</span> results
-        </p>
-    </div>
-    <div class="flex flex-1 justify-between sm:justify-end gap-1">
-        {% if page_obj.has_previous %}
-        <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}"
-           class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            Previous
-        </a>
-        {% endif %}
-
-        {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-            <span class="relative hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md">{{ num }}</span>
-            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}"
-               class="relative hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 rounded-md">{{ num }}</a>
-            {% elif num == 1 or num == page_obj.paginator.num_pages %}
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}"
-               class="relative hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 rounded-md">{{ num }}</a>
-            {% elif num == 2 or num == page_obj.paginator.num_pages|add:"-1" %}
-            <span class="relative hidden sm:inline-flex items-center px-2 py-2 text-sm text-gray-500">&hellip;</span>
-            {% endif %}
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-        <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}"
-           class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-            Next
-            <svg class="h-4 w-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-        </a>
-        {% endif %}
-    </div>
+<nav
+  class="mt-4 flex items-center justify-between rounded-lg border-t border-gray-200 bg-white px-4 py-3 shadow sm:px-6"
+  aria-label="Pagination"
+>
+  <div class="hidden sm:block">
+    <p class="text-sm text-gray-700">
+      Showing <span class="font-medium">{{ page_obj.start_index }}</span> to
+      <span class="font-medium">{{ page_obj.end_index }}</span> of
+      <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+    </p>
+  </div>
+  <div class="flex flex-1 justify-between gap-1 sm:justify-end">
+    {% if page_obj.has_previous %}
+    <a
+      href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}"
+      class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+    >
+      <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        ></path>
+      </svg>
+      Previous
+    </a>
+    {% endif %} {% for num in page_obj.paginator.page_range %} {% if page_obj.number == num %}
+    <span
+      class="relative hidden items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white sm:inline-flex"
+      >{{ num }}</span
+    >
+    {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+    <a
+      href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}"
+      class="relative hidden items-center rounded-md px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:inline-flex"
+      >{{ num }}</a
+    >
+    {% elif num == 1 or num == page_obj.paginator.num_pages %}
+    <a
+      href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}"
+      class="relative hidden items-center rounded-md px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:inline-flex"
+      >{{ num }}</a
+    >
+    {% elif num == 2 or num == page_obj.paginator.num_pages|add:"-1" %}
+    <span class="relative hidden items-center px-2 py-2 text-sm text-gray-500 sm:inline-flex"
+      >&hellip;</span
+    >
+    {% endif %} {% endfor %} {% if page_obj.has_next %}
+    <a
+      href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}"
+      class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+    >
+      Next
+      <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 5l7 7-7 7"
+        ></path>
+      </svg>
+    </a>
+    {% endif %}
+  </div>
 </nav>
 {% endif %}

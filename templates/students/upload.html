@@ -1,72 +1,97 @@
-{% extends 'base.html' %}
-
-{% block title %}Upload Students - Exodus{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}Upload Students - Exodus{% endblock %} {% block content
+%}
 <div class="mb-6">
-    <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-        <a href="{% url 'frontend:student_list' %}" class="hover:text-indigo-600">Students</a>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-        <span class="text-gray-900">Upload CSV</span>
-    </div>
-    <h1 class="text-2xl font-bold text-gray-900">Upload Students</h1>
-    <p class="text-gray-500 mt-1">Import students from a CSV file</p>
+  <div class="mb-2 flex items-center gap-2 text-sm text-gray-500">
+    <a href="{% url 'frontend:student_list' %}" class="hover:text-indigo-600">Students</a>
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+    </svg>
+    <span class="text-gray-900">Upload CSV</span>
+  </div>
+  <h1 class="text-2xl font-bold text-gray-900">Upload Students</h1>
+  <p class="mt-1 text-gray-500">Import students from a CSV file</p>
 </div>
 
-<div class="max-w-xl mx-auto">
-    <form method="post" enctype="multipart/form-data" id="upload-form">
-        {% csrf_token %}
-        <label for="csv-file" class="block border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-indigo-500 transition-colors cursor-pointer" id="drop-zone">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <p class="mt-4 text-sm text-gray-600">Drag and drop your CSV here, or <span class="text-indigo-600 font-medium">click to browse</span></p>
-            <p class="mt-1 text-xs text-gray-400" id="file-name">No file selected</p>
-            <input type="file" name="file" id="csv-file" accept=".csv" class="hidden">
-        </label>
-        <div class="mt-4 flex items-center justify-between">
-            <p class="text-xs text-gray-500">
-                Expected columns: <span class="font-medium">First Name, Last Name, Email, Student ID</span>
-            </p>
-            <button type="submit" class="inline-flex items-center bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" id="upload-btn" disabled>
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                Upload CSV
-            </button>
-        </div>
-    </form>
+<div class="mx-auto max-w-xl">
+  <form method="post" enctype="multipart/form-data" id="upload-form">
+    {% csrf_token %}
+    <label
+      for="csv-file"
+      class="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-12 text-center transition-colors hover:border-indigo-500"
+      id="drop-zone"
+    >
+      <svg
+        class="mx-auto h-12 w-12 text-gray-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+        />
+      </svg>
+      <p class="mt-4 text-sm text-gray-600">
+        Drag and drop your CSV here, or
+        <span class="font-medium text-indigo-600">click to browse</span>
+      </p>
+      <p class="mt-1 text-xs text-gray-400" id="file-name">No file selected</p>
+      <input type="file" name="file" id="csv-file" accept=".csv" class="hidden" />
+    </label>
+    <div class="mt-4 flex items-center justify-between">
+      <p class="text-xs text-gray-500">
+        Expected columns: <span class="font-medium">First Name, Last Name, Email, Student ID</span>
+      </p>
+      <button
+        type="submit"
+        class="inline-flex items-center rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+        id="upload-btn"
+        disabled
+      >
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+          ></path>
+        </svg>
+        Upload CSV
+      </button>
+    </div>
+  </form>
 </div>
 
 <script>
-(function() {
+  (function () {
     var fileInput = document.getElementById('csv-file');
     var fileName = document.getElementById('file-name');
     var uploadBtn = document.getElementById('upload-btn');
     var dropZone = document.getElementById('drop-zone');
 
-    fileInput.addEventListener('change', function() {
-        if (fileInput.files.length > 0) {
-            fileName.textContent = fileInput.files[0].name;
-            fileName.classList.add('text-indigo-600', 'font-medium');
-            uploadBtn.disabled = false;
-        }
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+        fileName.classList.add('text-indigo-600', 'font-medium');
+        uploadBtn.disabled = false;
+      }
     });
 
-    dropZone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+    dropZone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
     });
-    dropZone.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+    dropZone.addEventListener('dragleave', function (e) {
+      e.preventDefault();
+      dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
     });
-    dropZone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
-        if (e.dataTransfer.files.length > 0) {
-            fileInput.files = e.dataTransfer.files;
-            fileInput.dispatchEvent(new Event('change'));
-        }
+    dropZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
     });
-})();
+  })();
 </script>
 {% endblock %}
