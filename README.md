@@ -127,6 +127,26 @@ python manage.py runserver
 
 Visit `http://localhost:8000` — you'll be redirected to the login page.
 
+### Docker Setup (Recommended)
+
+If you have Docker and Docker Compose installed, you can spin up the entire application (including a PostgreSQL database) with a single command:
+
+```bash
+# Clone the repository
+git clone https://github.com/Larry-007-del/Exodus.git
+cd Exodus/attendance_system_master
+
+# Build and start the containers
+docker-compose up --build -d
+
+# Visit http://localhost:8000
+```
+
+To run Django management commands inside the Docker container (like creating a superuser):
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
+
 ### Testing Password Reset Locally
 
 In `DEBUG` mode, the email backend is set to `console` — password reset emails will print directly to the terminal. Click "Forgot password?" on the login page, enter an email, and check the terminal output for the reset link.
