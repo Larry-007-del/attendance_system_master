@@ -165,12 +165,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
         # Send notifications to students (asynchronously)
         from .tasks import send_attendance_started_notifications
-        import threading
-        threading.Thread(
-            target=send_attendance_started_notifications,
-            args=[attendance, token_value],
-            daemon=True
-        ).start()
+        send_attendance_started_notifications.delay(attendance.id, token_value)
 
         # Schedule expiration reminder (15 minutes before expiry)
         from .tasks import schedule_attendance_expiration_reminder
@@ -336,7 +331,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         
         # Send notifications to students who missed the session
         from .tasks import send_missed_attendance_notifications
-        send_missed_attendance_notifications(attendance)
+        send_missed_attendance_notifications.delay(attendance.id)
 
         return Response({'status': 'Attendance session ended successfully'}, status=status.HTTP_200_OK)
     
