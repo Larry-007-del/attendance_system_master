@@ -288,6 +288,51 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+# OpenAPI / Swagger Documentation
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Exodus Attendance API',
+    'DESCRIPTION': (
+        'RESTful API for the Exodus Attendance System.\n\n'
+        '## Authentication\n'
+        'All endpoints (except login) require a **JWT Bearer token** in the `Authorization` header:\n'
+        '```\nAuthorization: Bearer <access_token>\n```\n\n'
+        '### Token Lifecycle\n'
+        '1. **Login** via `/api/login/student/` or `/api/login/staff/` → receive `access` + `refresh` tokens\n'
+        '2. **Use** the `access` token for API requests (valid for 30 minutes)\n'
+        '3. **Refresh** via `/api/token/refresh/` with the `refresh` token → receive new token pair\n'
+        '4. **Logout** via `/api/logout/` → blacklists the refresh token\n'
+    ),
+    'VERSION': '2.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'Auth', 'description': 'Authentication & token management'},
+        {'name': 'Students', 'description': 'Student CRUD and enrollment'},
+        {'name': 'Lecturers', 'description': 'Lecturer management'},
+        {'name': 'Courses', 'description': 'Course management'},
+        {'name': 'Attendance', 'description': 'Attendance sessions and records'},
+        {'name': 'Reports', 'description': 'Attendance history and reports'},
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': False,
+        'filter': True,
+    },
+    'SECURITY': [{'BearerAuth': []}],
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+                'description': 'JWT access token obtained from /api/login/student/ or /api/login/staff/',
+            }
+        }
+    },
+}
+
 # Authentication Backends
 AUTHENTICATION_BACKENDS = (
     'attendance.authentication_backends.EmailBackend',

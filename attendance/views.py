@@ -359,12 +359,16 @@ class StudentLoginView(APIView):
     authentication_classes = []
 
     @extend_schema(
+        tags=['Auth'],
+        summary='Student login',
+        description='Authenticate a student and receive JWT access/refresh token pair.',
         request=StudentLoginRequestSerializer,
         responses={
             200: OpenApiResponse(response=StudentLoginSuccessSerializer, description='Student login successful.'),
             400: OpenApiResponse(response=APIErrorSerializer, description='Validation/authentication failure.'),
             429: OpenApiResponse(response=APIErrorSerializer, description='Login rate limit exceeded.'),
         },
+        auth=[],
         examples=[
             OpenApiExample(
                 'Student login error',
@@ -404,12 +408,16 @@ class StaffLoginView(APIView):
     authentication_classes = []
 
     @extend_schema(
+        tags=['Auth'],
+        summary='Staff login',
+        description='Authenticate a lecturer/staff member and receive JWT access/refresh token pair.',
         request=StaffLoginRequestSerializer,
         responses={
             200: OpenApiResponse(response=StaffLoginSuccessSerializer, description='Staff login successful.'),
             400: OpenApiResponse(response=APIErrorSerializer, description='Validation/authentication failure.'),
             429: OpenApiResponse(response=APIErrorSerializer, description='Login rate limit exceeded.'),
         },
+        auth=[],
         examples=[
             OpenApiExample(
                 'Staff login error',
@@ -448,6 +456,9 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        tags=['Auth'],
+        summary='Logout',
+        description='Blacklist the refresh token and end the session.',
         request={'type': 'object', 'properties': {'refresh': {'type': 'string'}}, 'required': ['refresh']},
         responses={205: None, 400: OpenApiResponse(response=APIErrorSerializer, description='Invalid or missing refresh token.')},
     )
