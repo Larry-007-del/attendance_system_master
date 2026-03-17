@@ -1,0 +1,3 @@
+# Django templates — Prettier splits {% block %} tags across lines,
+# breaking Django's template parser. Do NOT format these.
+templates/
