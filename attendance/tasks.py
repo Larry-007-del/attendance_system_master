@@ -86,23 +86,29 @@ def process_student_upload(self, student_data_list, uploader_email):
     Celery task to handle processing of bulk student CSV uploads.
     Accepts a list of dictionaries representing the parsed CSV rows.
     """
+    total = len(student_data_list)
     try:
         count = 0
+        skipped = 0
         from django.http import HttpRequest
         
-        # We need a dummy request object to pass to PasswordResetForm
-        # which checks request.is_secure()
         dummy_request = HttpRequest()
         dummy_request.META['SERVER_NAME'] = 'localhost'
         dummy_request.META['SERVER_PORT'] = '8000'
         
-        for row in student_data_list:
+        for i, row in enumerate(student_data_list):
+            self.update_state(state='PROGRESS', meta={
+                'current': i + 1, 'total': total,
+                'status': f'Processing student {i + 1} of {total}...'
+            })
+
             first_name = row.get('first_name', '').strip()
             last_name = row.get('last_name', '').strip()
             email = row.get('email', '').strip()
             student_id = row.get('student_id', '').strip()
 
             if not all([first_name, last_name, email, student_id]):
+                skipped += 1
                 continue
 
             if not User.objects.filter(username=student_id).exists():
@@ -130,8 +136,9 @@ def process_student_upload(self, student_data_list, uploader_email):
                     )
                     
                 count += 1
+            else:
+                skipped += 1
 
-        # Optionally notify the uploader that the background job finished
         if uploader_email:
             send_mail(
                 subject='Student Bulk Upload Complete',
@@ -141,7 +148,7 @@ def process_student_upload(self, student_data_list, uploader_email):
                 fail_silently=True,
             )
             
-        return f"Successfully processed {count} students."
+        return {'created': count, 'skipped': skipped, 'total': total}
         
     except Exception as e:
         self.retry(exc=e, countdown=60)
@@ -153,19 +160,31 @@ def process_enrollment_upload(self, student_ids, course_id, uploader_email):
     Celery task to handle processing of bulk course enrollment CSV uploads.
     Accepts a list of student IDs and the course ID.
     """
+    total = len(student_ids)
     try:
         course = Course.objects.get(id=course_id)
         
-        # Fetch matching students
+        self.update_state(state='PROGRESS', meta={
+            'current': 0, 'total': total,
+            'status': 'Looking up students...'
+        })
+
         students = Student.objects.filter(student_id__in=student_ids)
         existing_enrollments = CourseEnrollment.objects.filter(course=course).values_list('student_id', flat=True)
         
         enrollments = []
         count = 0
-        for student in students:
+        skipped = 0
+        for i, student in enumerate(students):
+            self.update_state(state='PROGRESS', meta={
+                'current': i + 1, 'total': total,
+                'status': f'Enrolling student {i + 1} of {total}...'
+            })
             if student.id not in existing_enrollments:
                 enrollments.append(CourseEnrollment(course=course, student_id=student.id))
                 count += 1
+            else:
+                skipped += 1
         
         CourseEnrollment.objects.bulk_create(enrollments, ignore_conflicts=True)
         
@@ -178,9 +197,9 @@ def process_enrollment_upload(self, student_ids, course_id, uploader_email):
                 fail_silently=True,
             )
             
-        return f"Successfully enrolled {count} students."
+        return {'enrolled': count, 'skipped': skipped, 'total': total, 'course': course.course_code}
         
     except Course.DoesNotExist:
-        return "Course not found."
+        return {'error': 'Course not found.'}
     except Exception as e:
-        self.retry(exc=e, countdown=60)
+        self.retry(exc=e, countdown=60)

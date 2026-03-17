@@ -1,5 +1,4 @@
-{% extends 'base.html' %} {% block title %}Upload Enrollments - Exodus{% endblock %} {% block
-content %}
+{% extends 'base.html' %} {% block title %}Upload Enrollments - Exodus{% endblock %} {% block content %}
 <div class="mb-6">
   <div class="mb-2 flex items-center gap-2 text-sm text-gray-500">
     <a href="{% url 'frontend:course_list' %}" class="hover:text-indigo-600">Courses</a>
@@ -15,6 +14,7 @@ content %}
 </div>
 
 <div class="mx-auto max-w-xl">
+  {% include 'includes/progress_card.html' %}
   <form method="post" enctype="multipart/form-data" id="upload-form">
     {% csrf_token %}
 

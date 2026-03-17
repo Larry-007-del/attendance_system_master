@@ -84,6 +84,7 @@ urlpatterns = [
     path('api/search/lecturers/', views.ajax_search_lecturers, name='ajax_search_lecturers'),
     path('api/search/courses/', views.ajax_search_courses, name='ajax_search_courses'),
     path('api/dashboard/stats/', views.ajax_dashboard_stats, name='ajax_dashboard_stats'),
+    path('api/task-status/<str:task_id>/', views.task_status, name='task_status'),
     
     # Two-Factor Authentication
     path('2fa/setup/', views.student_setup_2fa, name='student_setup_2fa'),

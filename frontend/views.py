@@ -565,6 +565,7 @@ def student_create(request):
 @admin_required
 def upload_students(request):
     """Bulk upload students from CSV file (admin only)"""
+    task_id = None
     if request.method == 'POST':
         form = StudentUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -608,14 +609,12 @@ def upload_students(request):
 
                 if student_data_list:
                     from attendance.tasks import process_student_upload
-                    # Fire to Celery Queue
-                    process_student_upload.delay(student_data_list, request.user.email)
-                    messages.success(request, f'{len(student_data_list)} students are being processed in the background. You will receive an email upon completion.')
+                    result = process_student_upload.delay(student_data_list, request.user.email)
+                    task_id = result.id
+                    messages.info(request, f'{len(student_data_list)} students are being processed...')
                 else:
                     messages.warning(request, "No valid students found in the CSV file.")
 
-                return redirect('frontend:dashboard')
-                
             except UnicodeDecodeError:
                 messages.error(request, "Invalid file encoding. Please ensure the CSV is saved as UTF-8.")
             except Exception as e:
@@ -624,7 +623,7 @@ def upload_students(request):
     else:
         form = StudentUploadForm()
     
-    return render(request, 'students/upload.html', {'form': form})
+    return render(request, 'students/upload.html', {'form': form, 'task_id': task_id})
 
 
 @login_required
@@ -889,6 +888,7 @@ def course_edit(request, pk):
 @staff_required
 def upload_enrollments(request):
     """Bulk upload course enrollments from CSV file"""
+    task_id = None
     if request.method == 'POST':
         form = CourseEnrollmentUploadForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
@@ -914,16 +914,11 @@ def upload_enrollments(request):
                 
                 if student_ids:
                     from attendance.tasks import process_enrollment_upload
-                    # Fire off to Celery in the background
-                    process_enrollment_upload.delay(student_ids, course.id, request.user.email)
-                    messages.success(request, f'{len(student_ids)} students are being enrolled into {course.course_code} in the background. You will receive an email upon completion.')
+                    result = process_enrollment_upload.delay(student_ids, course.id, request.user.email)
+                    task_id = result.id
+                    messages.info(request, f'{len(student_ids)} students are being enrolled into {course.course_code}...')
                 else:
                     messages.warning(request, "No valid students found in the CSV file.")
-                
-                if request.user.is_superuser:
-                    return redirect('frontend:course_list')
-                else:
-                    return redirect('frontend:my_courses')
                 
             except UnicodeDecodeError:
                 messages.error(request, "Invalid file encoding. Please ensure the CSV is saved as UTF-8.")
@@ -933,7 +928,29 @@ def upload_enrollments(request):
     else:
         form = CourseEnrollmentUploadForm(user=request.user)
     
-    return render(request, 'courses/upload_enrollments.html', {'form': form})
+    return render(request, 'courses/upload_enrollments.html', {'form': form, 'task_id': task_id})
+
+
+@login_required
+def task_status(request, task_id):
+    """Return the status of a Celery task as JSON for polling."""
+    from celery.result import AsyncResult
+    result = AsyncResult(task_id)
+    response = {'state': result.state}
+
+    if result.state == 'PROGRESS':
+        info = result.info or {}
+        response.update({
+            'current': info.get('current', 0),
+            'total': info.get('total', 1),
+            'status': info.get('status', 'Processing...'),
+        })
+    elif result.state == 'SUCCESS':
+        response['result'] = result.result
+    elif result.state == 'FAILURE':
+        response['error'] = str(result.result)
+
+    return JsonResponse(response)
 
 
 @admin_required

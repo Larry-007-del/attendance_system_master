@@ -12,6 +12,7 @@
 </div>
 
 <div class="mx-auto max-w-xl">
+  {% include 'includes/progress_card.html' %}
   <form method="post" enctype="multipart/form-data" id="upload-form">
     {% csrf_token %}
     <label
