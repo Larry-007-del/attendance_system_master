@@ -1,5 +1,4 @@
-{% extends 'base.html' %} {% block title %}Edit {{ course.name }} - Exodus{% endblock %} {% block
-content %}
+{% extends 'base.html' %} {% block title %}Edit {{ course.name }} - Exodus{% endblock %} {% block content %}
 <div class="mb-6">
   <a
     href="{% url 'frontend:course_detail' course.id %}"
@@ -58,12 +57,7 @@ content %}
           {% for lecturer in lecturers %}
           <option
             value="{{ lecturer.id }}"
-            {%
-            if
-            course.lecturer.id == lecturer.id
-            %}selected{%
-            endif
-            %}
+            {% if course.lecturer.id == lecturer.id %}selected{% endif %}
           >
             {{ lecturer.name }}
           </option>
@@ -76,12 +70,7 @@ content %}
           type="checkbox"
           name="is_active"
           id="is_active"
-          {%
-          if
-          course.is_active
-          %}checked{%
-          endif
-          %}
+          {% if course.is_active %}checked{% endif %}
           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-indigo-500"
         />
         <label for="is_active" class="ml-2 block text-sm text-gray-700">Active</label>
@@ -99,14 +88,7 @@ content %}
             type="checkbox"
             name="students"
             value="{{ student.id }}"
-            {%
-            if
-            student.id
-            in
-            current_enrollments
-            %}checked{%
-            endif
-            %}
+            {% if student.id in current_enrollments %}checked{% endif %}
             class="rounded border-gray-300 text-blue-600 focus:ring-indigo-500"
           />
           <span class="text-sm text-gray-700">{{ student.name }}</span>

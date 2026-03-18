@@ -469,11 +469,11 @@ class AttendanceTokenModelTest(TestCase):
 
 from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class APIAuthTestCase(APITestCase):
-    """Base test case for API tests with authentication setup"""
+    """Base test case for API tests with JWT authentication setup"""
 
     def setUp(self):
         self.admin_user = User.objects.create_superuser(
@@ -496,19 +496,20 @@ class APIAuthTestCase(APITestCase):
         )
         self.course.students.add(self.student)
 
-        self.admin_token = Token.objects.create(user=self.admin_user)
-        self.lec_token = Token.objects.create(user=self.lec_user)
-        self.stu_token = Token.objects.create(user=self.stu_user)
+    def get_jwt_for(self, user):
+        refresh = RefreshToken.for_user(user)
+        return str(refresh.access_token)
 
-    def auth_as(self, token):
-        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+    def auth_as_user(self, user):
+        token = self.get_jwt_for(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
 
 class LecturerAPITest(APIAuthTestCase):
     """Tests for Lecturer API endpoints"""
 
     def test_list_lecturers_authenticated(self):
-        self.auth_as(self.admin_token)
+        self.auth_as_user(self.admin_user)
         response = self.client.get('/api/lecturers/')
         self.assertEqual(response.status_code, 200)
 
@@ -517,13 +518,13 @@ class LecturerAPITest(APIAuthTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_retrieve_lecturer(self):
-        self.auth_as(self.admin_token)
+        self.auth_as_user(self.admin_user)
         response = self.client.get(f'/api/lecturers/{self.lecturer.pk}/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['staff_id'], 'AL01')
 
     def test_my_courses_for_lecturer(self):
-        self.auth_as(self.lec_token)
+        self.auth_as_user(self.lec_user)
         response = self.client.get('/api/lecturers/my-courses/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -534,13 +535,13 @@ class StudentAPITest(APIAuthTestCase):
     """Tests for Student API endpoints"""
 
     def test_list_students_as_lecturer(self):
-        self.auth_as(self.lec_token)
+        self.auth_as_user(self.lec_user)
         response = self.client.get('/api/students/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_list_students_as_student(self):
-        self.auth_as(self.stu_token)
+        self.auth_as_user(self.stu_user)
         response = self.client.get('/api/students/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 1)
@@ -551,13 +552,13 @@ class CourseAPITest(APIAuthTestCase):
     """Tests for Course API endpoints"""
 
     def test_list_courses(self):
-        self.auth_as(self.admin_token)
+        self.auth_as_user(self.admin_user)
         response = self.client.get('/api/courses/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_retrieve_course(self):
-        self.auth_as(self.admin_token)
+        self.auth_as_user(self.admin_user)
         response = self.client.get(f'/api/courses/{self.course.pk}/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['course_code'], 'API1')
@@ -567,7 +568,7 @@ class AttendanceAPITest(APIAuthTestCase):
     """Tests for Attendance API endpoints"""
 
     def test_list_attendance(self):
-        self.auth_as(self.admin_token)
+        self.auth_as_user(self.admin_user)
         Attendance.objects.create(course=self.course, date=timezone.localdate())
         response = self.client.get('/api/attendances/')
         self.assertEqual(response.status_code, 200)
@@ -577,7 +578,7 @@ class AttendanceAPITest(APIAuthTestCase):
     @patch('attendance.tasks.schedule_attendance_expiration_reminder')
     @patch('attendance.tasks.send_attendance_started_notifications')
     def test_generate_attendance_token(self, mock_notif, mock_sched):
-        self.auth_as(self.lec_token)
+        self.auth_as_user(self.lec_user)
         response = self.client.post(
             f'/api/courses/{self.course.pk}/generate_attendance_token/',
             {'token': 'TK1234', 'latitude': '5.650000', 'longitude': '-0.187000'},
@@ -589,7 +590,7 @@ class AttendanceAPITest(APIAuthTestCase):
         )
 
     def test_generate_attendance_token_missing_fields(self):
-        self.auth_as(self.lec_token)
+        self.auth_as_user(self.lec_user)
         response = self.client.post(
             f'/api/courses/{self.course.pk}/generate_attendance_token/',
             {'token': 'TK9999'},
@@ -598,7 +599,7 @@ class AttendanceAPITest(APIAuthTestCase):
 
     @override_settings(DEFAULT_FILE_STORAGE='django.core.files.storage.InMemoryStorage')
     def test_take_attendance_valid(self):
-        self.auth_as(self.stu_token)
+        self.auth_as_user(self.stu_user)
         Attendance.objects.create(
             course=self.course, date=timezone.localdate(), is_active=True
         )
@@ -611,7 +612,7 @@ class AttendanceAPITest(APIAuthTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_take_attendance_invalid_token(self):
-        self.auth_as(self.stu_token)
+        self.auth_as_user(self.stu_user)
         response = self.client.post(
             '/api/courses/take_attendance/', {'token': 'NOPE'},
         )
@@ -619,7 +620,7 @@ class AttendanceAPITest(APIAuthTestCase):
 
     @patch('attendance.tasks.send_missed_attendance_notifications')
     def test_end_attendance(self, mock_notif):
-        self.auth_as(self.lec_token)
+        self.auth_as_user(self.lec_user)
         att = Attendance.objects.create(
             course=self.course, date=timezone.localdate(), is_active=True
         )
@@ -631,7 +632,7 @@ class AttendanceAPITest(APIAuthTestCase):
         self.assertFalse(att.is_active)
 
     def test_end_attendance_no_active_session(self):
-        self.auth_as(self.lec_token)
+        self.auth_as_user(self.lec_user)
         response = self.client.post(
             '/api/attendances/end_attendance/', {'course_id': self.course.pk},
         )
@@ -653,7 +654,7 @@ class SubmitLocationAPITest(APIAuthTestCase):
 
     @override_settings(DEFAULT_FILE_STORAGE='django.core.files.storage.InMemoryStorage')
     def test_submit_location_within_radius(self):
-        self.auth_as(self.stu_token)
+        self.auth_as_user(self.stu_user)
         AttendanceToken.objects.create(
             course=self.course, token='LOC123', is_active=True
         )
@@ -670,7 +671,7 @@ class SubmitLocationAPITest(APIAuthTestCase):
 
     @override_settings(DEFAULT_FILE_STORAGE='django.core.files.storage.InMemoryStorage')
     def test_submit_location_out_of_range(self):
-        self.auth_as(self.stu_token)
+        self.auth_as_user(self.stu_user)
         AttendanceToken.objects.create(
             course=self.course, token='LOC456', is_active=True
         )
@@ -683,7 +684,7 @@ class SubmitLocationAPITest(APIAuthTestCase):
         self.assertIn('error', response.data)
 
     def test_submit_location_invalid_token(self):
-        self.auth_as(self.stu_token)
+        self.auth_as_user(self.stu_user)
         response = self.client.post(
             '/api/submit-location/',
             {'latitude': '5.650010', 'longitude': '-0.187010', 'attendance_token': 'INVALID'},
@@ -712,7 +713,8 @@ class StudentLoginAPITest(TestCase):
             {'username': 'stulogin', 'password': 'pass1234', 'student_id': 'SL01'},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn('token', response.data)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
 
     def test_student_login_wrong_student_id(self):
         response = self.client_api.post(
@@ -767,7 +769,8 @@ class StaffLoginAPITest(TestCase):
             {'username': 'leclogin', 'password': 'pass1234', 'staff_id': 'LL01'},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn('token', response.data)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
 
     def test_staff_login_wrong_staff_id(self):
         response = self.client_api.post(
@@ -806,11 +809,11 @@ class StaffLoginAPITest(TestCase):
 class LogoutAPITest(APIAuthTestCase):
     """Tests for API logout"""
 
-    def test_logout_deletes_token(self):
-        self.auth_as(self.admin_token)
-        response = self.client.post('/api/logout/')
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(Token.objects.filter(user=self.admin_user).exists())
+    def test_logout_blacklists_token(self):
+        refresh = RefreshToken.for_user(self.admin_user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {str(refresh.access_token)}')
+        response = self.client.post('/api/logout/', {'refresh': str(refresh)})
+        self.assertEqual(response.status_code, 205)
 
 
 # ==================== Serializer Tests ====================
@@ -901,55 +904,49 @@ class APIPermissionTest(TestCase):
         )
         self.course.students.add(self.student)
 
+    def _jwt_header(self, user):
+        refresh = RefreshToken.for_user(user)
+        return f'Bearer {str(refresh.access_token)}'
+
     def test_student_cannot_list_lecturers(self):
-        from rest_framework.authtoken.models import Token
-        token = Token.objects.create(user=self.student_user)
         response = self.client.get(
-            '/api/lecturers/', HTTP_AUTHORIZATION=f'Token {token.key}'
+            '/api/lecturers/', HTTP_AUTHORIZATION=self._jwt_header(self.student_user)
         )
         self.assertEqual(response.status_code, 403)
 
     def test_lecturer_can_list_lecturers(self):
-        from rest_framework.authtoken.models import Token
-        token = Token.objects.create(user=self.lecturer_user)
         response = self.client.get(
-            '/api/lecturers/', HTTP_AUTHORIZATION=f'Token {token.key}'
+            '/api/lecturers/', HTTP_AUTHORIZATION=self._jwt_header(self.lecturer_user)
         )
         self.assertEqual(response.status_code, 200)
 
     def test_student_cannot_create_course_via_api(self):
-        from rest_framework.authtoken.models import Token
-        token = Token.objects.create(user=self.student_user)
         response = self.client.post(
             '/api/courses/', {'name': 'Hack', 'course_code': 'HCK'},
-            HTTP_AUTHORIZATION=f'Token {token.key}',
+            HTTP_AUTHORIZATION=self._jwt_header(self.student_user),
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 403)
 
     def test_generate_token_blocked_for_non_owner(self):
-        from rest_framework.authtoken.models import Token
         other_user = User.objects.create_user(username='otherLec', password='testpassword123')
         Lecturer.objects.create(
             user=other_user, staff_id='OL01', name='Other', department='CS'
         )
-        token = Token.objects.create(user=other_user)
         response = self.client.post(
             f'/api/courses/{self.course.pk}/generate_attendance_token/',
             {'token': 'ABCDEF', 'latitude': '5.65', 'longitude': '-0.187'},
-            HTTP_AUTHORIZATION=f'Token {token.key}',
+            HTTP_AUTHORIZATION=self._jwt_header(other_user),
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 403)
 
     def test_submit_location_invalid_coords(self):
         """SubmitLocationView should reject non-numeric coordinates."""
-        from rest_framework.authtoken.models import Token
-        token = Token.objects.create(user=self.student_user)
         response = self.client.post(
             '/api/submit-location/',
             {'latitude': 'invalid', 'longitude': 'bad', 'attendance_token': 'ABC123'},
-            HTTP_AUTHORIZATION=f'Token {token.key}',
+            HTTP_AUTHORIZATION=self._jwt_header(self.student_user),
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 400)

@@ -1,5 +1,4 @@
-{% extends 'base.html' %} {% block title %}{{ attendance.course.name }} - Exodus{% endblock %} {%
-block content %}
+{% extends 'base.html' %} {% block title %}{{ attendance.course.name }} - Exodus{% endblock %} {% block content %}
 <div class="mb-6">
   <a
     href="{% url 'frontend:attendance_history' %}"
@@ -110,8 +109,7 @@ block content %}
               {% endif %}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">
-              {% if item.distance %} {{ item.distance|floatformat:1 }} meters {% else %} N/A {%
-              endif %}
+              {% if item.distance %} {{ item.distance|floatformat:1 }} meters {% else %} N/A {% endif %}
             </td>
             <td class="px-4 py-2 text-sm text-gray-500">{{ item.marked_at|time:"H:i" }}</td>
           </tr>

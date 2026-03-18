@@ -347,13 +347,7 @@
                   type="checkbox"
                   name="require_two_factor_auth"
                   id="require_two_factor_auth"
-                  {%
-                  if
-                  lecturer.require_two_factor_auth
-                  %}checked
-                  disabled{%
-                  endif
-                  %}
+                  {% if lecturer.require_two_factor_auth %}checked disabled{% endif %}
                   class="h-4 w-4 cursor-pointer rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
               </div>

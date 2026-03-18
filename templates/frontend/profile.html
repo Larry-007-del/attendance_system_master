@@ -188,45 +188,25 @@
               >
                 <option
                   value="email"
-                  {%
-                  if
-                  profile.notification_preference == 'email'
-                  %}selected{%
-                  endif
-                  %}
+                  {% if profile.notification_preference == 'email' %}selected{% endif %}
                 >
                   Email
                 </option>
                 <option
                   value="sms"
-                  {%
-                  if
-                  profile.notification_preference == 'sms'
-                  %}selected{%
-                  endif
-                  %}
+                  {% if profile.notification_preference == 'sms' %}selected{% endif %}
                 >
                   SMS
                 </option>
                 <option
                   value="both"
-                  {%
-                  if
-                  profile.notification_preference == 'both'
-                  %}selected{%
-                  endif
-                  %}
+                  {% if profile.notification_preference == 'both' %}selected{% endif %}
                 >
                   Both
                 </option>
                 <option
                   value="none"
-                  {%
-                  if
-                  profile.notification_preference == 'none'
-                  %}selected{%
-                  endif
-                  %}
+                  {% if profile.notification_preference == 'none' %}selected{% endif %}
                 >
                   None
                 </option>
@@ -237,12 +217,7 @@
                 <input
                   type="checkbox"
                   name="is_notifications_enabled"
-                  {%
-                  if
-                  profile.is_notifications_enabled
-                  %}checked{%
-                  endif
-                  %}
+                  {% if profile.is_notifications_enabled %}checked{% endif %}
                   class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <span class="ml-2 text-sm text-gray-700">Enable notifications</span>

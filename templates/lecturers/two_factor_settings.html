@@ -1,5 +1,4 @@
-{% extends 'base.html' %} {% block title %}2FA Settings - {{ lecturer.name }}{% endblock %} {% block
-content %}
+{% extends 'base.html' %} {% block title %}2FA Settings - {{ lecturer.name }}{% endblock %} {% block content %}
 <div class="mb-6">
   <a
     href="{% url 'frontend:lecturer_detail' lecturer.pk %}"
@@ -33,12 +32,7 @@ content %}
               type="checkbox"
               name="require_two_factor_auth"
               id="require_two_factor_auth"
-              {%
-              if
-              lecturer.require_two_factor_auth
-              %}checked{%
-              endif
-              %}
+              {% if lecturer.require_two_factor_auth %}checked{% endif %}
               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-indigo-500"
             />
           </div>

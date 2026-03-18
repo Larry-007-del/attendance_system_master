@@ -1,2 +1,6 @@
-{% extends "admin/index.html" %} {% load exodus_admin %} {% block content %} {%
-exodus_dashboard_stats %} {{ block.super }} {% endblock %}
+{% extends "admin/index.html" %}
+{% load exodus_admin %}
+{% block content %}
+    {% exodus_dashboard_stats %}
+    {{ block.super }}
+{% endblock %}
