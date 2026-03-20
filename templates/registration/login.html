@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Exodus Attendance System</title>
+    <meta name="description" content="Sign in to your Exodus attendance account." />
+    <meta name="theme-color" content="#4f46e5" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%234f46e5'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='20' font-weight='bold'>E</text></svg>"
+    />
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+  <body class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+    <div class="flex min-h-screen flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+      <!-- Logo and Brand -->
+      <div class="mb-8 text-center">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg">
+          <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path>
+          </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Exodus</h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Attendance System</p>
+      </div>
+
+      <!-- Login Card -->
+      <div
+        class="w-full rounded-xl bg-white shadow-lg dark:border dark:border-gray-700 dark:bg-gray-800 sm:max-w-md"
+      >
+        <div class="spaces-y-6 px-6 py-8 sm:px-8 sm:py-10">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Sign in to your account to continue
+            </p>
+          </div>
+
+          <!-- Messages -->
+          {% if messages %}
+            {% for message in messages %}
+              <div
+                class="rounded-lg {% if message.tags %}bg-{{ message.tags }}-50 text-{{ message.tags }}-800 dark:bg-{{ message.tags }}-900 dark:text-{{ message.tags }}-300{% else %}bg-red-50 text-red-800 dark:bg-red-900 dark:text-red-300{% endif %} p-4 text-sm"
+                role="alert"
+              >
+                <div class="flex items-start">
+                  <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <div>{{ message }}</div>
+                </div>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <!-- Login Form -->
+          <form method="POST" class="space-y-5">
+            {% csrf_token %}
+            
+            <!-- Username/Email Field -->
+            <div>
+              <label
+                for="id_username"
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+              >
+                Username or Email
+              </label>
+              <div class="relative mt-2">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <svg
+                    class="h-5 w-5 text-gray-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M2.293 5.293a1 1 0 011.414 0L10 11.586l6.293-6.293a1 1 0 111.414 1.414l-7 7a1 1 0 01-1.414 0l-7-7a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
+                {{ form.username }}
+                {% if form.username.errors %}
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M18.364 5.636l-3.536 3.536m0 5.172l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.9l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 11-2 0 1 1 0 012 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                {% endif %}
+              </div>
+              {% if form.username.errors %}
+                <p class="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {{ form.username.errors.0 }}
+                </p>
+              {% endif %}
+            </div>
+
+            <!-- Password Field -->
+            <div>
+              <div class="flex items-center justify-between">
+                <label
+                  for="id_password"
+                  class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >
+                  Password
+                </label>
+                <a
+                  href="{% url 'frontend:password_reset' %}"
+                  class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                >
+                  Forgot?
+                </a>
+              </div>
+              <div class="relative mt-2">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <svg
+                    class="h-5 w-5 text-gray-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </div>
+                {{ form.password }}
+                {% if form.password.errors %}
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M18.364 5.636l-3.536 3.536m0 5.172l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.9l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 11-2 0 1 1 0 012 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                {% endif %}
+              </div>
+              {% if form.password.errors %}
+                <p class="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {{ form.password.errors.0 }}
+                </p>
+              {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800"
+            >
+              Sign in
+            </button>
+          </form>
+
+          <!-- Divider -->
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="bg-white px-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                >Don't have an account?</span
+              >
+            </div>
+          </div>
+
+          <!-- Register Link -->
+          <p class="text-center text-sm text-gray-600 dark:text-gray-400">
+            <a
+              href="{% url 'frontend:register' %}"
+              class="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            >
+              Create a new account
+            </a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p class="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
+        &copy; 2026 Exodus Attendance System. All rights reserved.
+      </p>
+    </div>
+
+    <style>
+      /* Custom input styling */
+      input[type="text"],
+      input[type="password"],
+      input[type="email"] {
+        @apply block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 placeholder-gray-500 transition-all focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-indigo-400 dark:focus:ring-indigo-500;
+      }
+
+      /* Remove default outline */
+      input:focus {
+        outline: none;
+      }
+    </style>
+  </body>
+</html>
