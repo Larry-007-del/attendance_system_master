@@ -18,7 +18,7 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: attendance_system.settings
-      DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production-use
+      DJANGO_SECRET_KEY: ci-test-secret-key-at-least-32-bytes-for-jwt-compliance
       DJANGO_DEBUG: "True"
 
     steps:
