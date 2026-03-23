@@ -849,20 +849,28 @@ def my_courses(request):
 
 @staff_required
 def course_list(request):
-    """List all courses (admin/lecturer only)"""
-    query = request.GET.get('q')
-    active_filter = request.GET.get('active')
+    """List all courses (admin/lecturer only) with HTMX"""
+    query = request.GET.get('q', '')
+    active_filter = request.GET.get('active', '')
+    sort = request.GET.get('sort', 'name')
     
     courses = Course.objects.all().select_related('lecturer').annotate(
         enrolled_count=Count('students')
-    ).order_by('name')
+    )
     
     if query:
         courses = courses.filter(
             Q(name__icontains=query) | Q(course_code__icontains=query)
         )
-    if active_filter is not None:
+    if active_filter in ['true', 'false']:
         courses = courses.filter(is_active=active_filter == 'true')
+        
+    allowed_sorts = ['name', '-name', 'course_code', '-course_code']
+    if sort in allowed_sorts:
+        courses = courses.order_by(sort)
+    else:
+        courses = courses.order_by('name')
+        sort = 'name'
     
     paginator = Paginator(courses, 12)
     page = request.GET.get('page')
@@ -877,7 +885,11 @@ def course_list(request):
         'courses': courses_page,
         'query': query,
         'active_filter': active_filter,
+        'sort': sort,
     }
+    
+    if request.headers.get('HX-Request'):
+        return render(request, 'partials/course_list_content.html', context)
     return render(request, 'courses/list.html', context)
 
 

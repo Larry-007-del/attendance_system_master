@@ -37,145 +37,55 @@
 </div>
 
 <!-- Search & Filters -->
-<div class="mb-6 rounded-lg bg-white p-4 shadow">
-  <form method="get" class="flex flex-col gap-4 md:flex-row">
+<div class="mb-6 rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+  <form method="get" class="flex flex-col gap-4 md:flex-row" id="courseSearchForm">
     <div class="flex-1">
       <input
         type="text"
         name="q"
         value="{{ query }}"
         placeholder="Search by name or course code..."
-        class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+        hx-get="{% url 'frontend:course_list' %}"
+        hx-trigger="keyup changed delay:500ms, search"
+        hx-target="#course-list-container"
+        hx-include="#courseSearchForm"
+        hx-push-url="true"
+        class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
       />
     </div>
     <select
       name="active"
-      class="rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-500"
+      hx-get="{% url 'frontend:course_list' %}"
+      hx-trigger="change"
+      hx-target="#course-list-container"
+      hx-include="#courseSearchForm"
+      hx-push-url="true"
+      class="rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
     >
       <option value="">All Status</option>
       <option value="true" {% if active_filter == 'true' %}selected{% endif %}>Active</option>
       <option value="false" {% if active_filter == 'false' %}selected{% endif %}>Inactive</option>
     </select>
-    <button type="submit" class="rounded-lg bg-gray-800 px-6 py-2 text-white hover:bg-gray-900">
-      Filter
-    </button>
-    {% if query or active_filter %}
-    <a
-      href="{% url 'frontend:course_list' %}"
-      class="rounded-lg border border-gray-300 px-6 py-2 hover:bg-gray-50"
-      >Clear</a
+    <select
+      name="sort"
+      hx-get="{% url 'frontend:course_list' %}"
+      hx-trigger="change"
+      hx-target="#course-list-container"
+      hx-include="#courseSearchForm"
+      hx-push-url="true"
+      class="rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
     >
-    {% endif %}
+      <option value="name" {% if sort == 'name' %}selected{% endif %}>Name (A-Z)</option>
+      <option value="-name" {% if sort == '-name' %}selected{% endif %}>Name (Z-A)</option>
+      <option value="course_code" {% if sort == 'course_code' %}selected{% endif %}>Code (A-Z)</option>
+      <option value="-course_code" {% if sort == '-course_code' %}selected{% endif %}>Code (Z-A)</option>
+    </select>
   </form>
 </div>
 
-<!-- Courses Grid -->
-<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-  {% for course in courses %}
-  <div
-    id="course-card-{{ course.id }}"
-    class="rounded-lg bg-white shadow transition hover:shadow-lg"
-  >
-    <div class="p-6">
-      <div class="mb-4 flex items-start justify-between">
-        <div>
-          <h3 class="text-lg font-semibold text-gray-900">{{ course.name }}</h3>
-          <p class="text-sm text-gray-500">{{ course.course_code }}</p>
-        </div>
-        <span
-          class="{% if course.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} rounded-full px-2.5 py-0.5 text-xs font-medium"
-        >
-          {% if course.is_active %}Active{% else %}Inactive{% endif %}
-        </span>
-      </div>
-
-      <div class="space-y-2 text-sm text-gray-600">
-        <div class="flex items-center">
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            ></path>
-          </svg>
-          {{ course.lecturer.name }}
-        </div>
-        <div class="flex items-center">
-          <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            ></path>
-          </svg>
-          {{ course.students.count }} students enrolled
-        </div>
-      </div>
-
-      <div class="mt-4 flex gap-2">
-        <a
-          href="{% url 'frontend:course_detail' course.id %}"
-          class="flex-1 rounded-lg bg-gray-100 px-4 py-2 text-center text-gray-700 hover:bg-gray-200"
-          >View</a
-        >
-        <a
-          href="{% url 'frontend:course_edit' course.id %}"
-          class="flex-1 rounded-lg bg-indigo-100 px-4 py-2 text-center text-blue-700 hover:bg-blue-200"
-          >Edit</a
-        >
-        <button
-          hx-delete="{% url 'frontend:course_delete' course.id %}"
-          hx-confirm="Are you sure you want to delete {{ course.course_code }}?"
-          hx-target="#course-card-{{ course.id }}"
-          hx-swap="outerHTML swap:1s"
-          class="rounded-lg bg-red-100 px-4 py-2 text-center text-red-700 hover:bg-red-200 focus:outline-none"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  </div>
-  {% empty %}
-  <div class="col-span-full">
-    <div
-      class="rounded-lg border-2 border-dashed border-gray-300 bg-white py-12 text-center shadow-sm"
-    >
-      <svg
-        class="mx-auto h-12 w-12 text-gray-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-        ></path>
-      </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">No courses yet</h3>
-      <p class="mt-1 text-sm text-gray-500">Get started by creating your first course.</p>
-      <div class="mt-6">
-        <a
-          href="{% url 'frontend:course_create' %}"
-          class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
-        >
-          <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            ></path>
-          </svg>
-          Create New Course
-        </a>
-      </div>
-    </div>
-  </div>
-  {% endfor %}
+<!-- Courses Grid Container -->
+<div id="course-list-container">
+  {% include 'partials/course_list_content.html' %}
 </div>
 
-{% include 'partials/pagination.html' with page_obj=courses %} {% endblock %}
+{% endblock %}
