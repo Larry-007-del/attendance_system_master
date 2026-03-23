@@ -646,8 +646,11 @@ def student_create(request):
                     phone_number=request.POST.get('phone_number'),
                 )
                 
+                if 'profile_picture' in request.FILES:
+                    student.profile_picture = request.FILES['profile_picture']
+                
                 # Validate student fields
-                form = StudentForm(request.POST, instance=student)
+                form = StudentForm(request.POST, request.FILES, instance=student)
                 if form.is_valid():
                     form.save()
                     messages.success(request, f'Student {student.name} created successfully!')
@@ -772,6 +775,10 @@ def student_edit(request, pk):
         student.phone_number = request.POST.get('phone_number')
         student.notification_preference = request.POST.get('notification_preference', 'both')
         student.is_notifications_enabled = request.POST.get('is_notifications_enabled') == 'on'
+        
+        if 'profile_picture' in request.FILES:
+            student.profile_picture = request.FILES['profile_picture']
+            
         student.save()
         
         messages.success(request, f'Student {student.name} updated successfully!')

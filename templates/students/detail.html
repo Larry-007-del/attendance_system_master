@@ -16,9 +16,13 @@
   </a>
   <div class="flex flex-col md:flex-row md:items-center md:justify-between">
     <div class="flex items-center">
-      <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-        <span class="text-2xl font-bold text-green-600">{{ student.name|first|upper }}</span>
-      </div>
+      {% if student.profile_picture %}
+        <img src="{{ student.profile_picture.url }}" alt="{{ student.name }}" class="h-16 w-16 rounded-full object-cover border-2 border-green-100 shadow-sm dark:border-green-900">
+      {% else %}
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+          <span class="text-2xl font-bold text-green-600 dark:text-green-300">{{ student.name|first|upper }}</span>
+        </div>
+      {% endif %}
       <div class="ml-4">
         <h1 class="text-2xl font-bold text-gray-900">{{ student.name }}</h1>
         <p class="text-gray-600">Student ID: {{ student.student_id }}</p>
