@@ -450,8 +450,11 @@ def lecturer_create(request):
                     longitude=request.POST.get('longitude') or None,
                 )
                 
+                if 'profile_picture' in request.FILES:
+                    lecturer.profile_picture = request.FILES['profile_picture']
+                
                 # Validate lecturer fields
-                form = LecturerForm(request.POST, instance=lecturer)
+                form = LecturerForm(request.POST, request.FILES, instance=lecturer)
                 if form.is_valid():
                     form.save()
                     messages.success(request, f'Lecturer {lecturer.name} created successfully!')
@@ -519,6 +522,9 @@ def lecturer_edit(request, pk):
             lecturer.longitude = float(lon) if lon else None
         except (ValueError, TypeError):
             lecturer.longitude = None
+            
+        if 'profile_picture' in request.FILES:
+            lecturer.profile_picture = request.FILES['profile_picture']
         
         lecturer.save()
         messages.success(request, f'Lecturer {lecturer.name} updated successfully!')
