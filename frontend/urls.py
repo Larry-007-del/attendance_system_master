@@ -84,6 +84,9 @@ urlpatterns = [
     path('api/search/lecturers/', views.ajax_search_lecturers, name='ajax_search_lecturers'),
     path('api/search/courses/', views.ajax_search_courses, name='ajax_search_courses'),
     path('api/dashboard/stats/', views.ajax_dashboard_stats, name='ajax_dashboard_stats'),
+    path('api/charts/weekly-attendance/', views.chart_weekly_attendance, name='chart_weekly_attendance'),
+    path('api/charts/course-enrollment/', views.chart_course_enrollment, name='chart_course_enrollment'),
+    path('api/charts/department-stats/', views.chart_department_stats, name='chart_department_stats'),
     path('api/task-status/<str:task_id>/', views.task_status, name='task_status'),
     
     # Two-Factor Authentication

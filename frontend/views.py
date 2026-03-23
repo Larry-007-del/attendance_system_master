@@ -304,6 +304,74 @@ def ajax_dashboard_stats(request):
     return JsonResponse(stats)
 
 
+@staff_required
+def chart_weekly_attendance(request):
+    """Returns attendance sessions over the last 7 days"""
+    today = timezone.localdate()
+    start_date = today - timedelta(days=6)
+    
+    records = Attendance.objects.filter(date__gte=start_date, date__lte=today).values('date').annotate(
+        sessions=Count('id')
+    ).order_by('date')
+    
+    date_list = [(start_date + timedelta(days=i)) for i in range(7)]
+    labels = [d.strftime('%a') for d in date_list]
+    data = [0] * 7
+    
+    for r in records:
+        if r['date'] in date_list:
+            idx = date_list.index(r['date'])
+            data[idx] = r['sessions']
+            
+    return JsonResponse({
+        'labels': labels,
+        'datasets': [{
+            'label': 'Live Sessions',
+            'data': data,
+            'backgroundColor': 'rgba(79, 70, 229, 0.2)',
+            'borderColor': 'rgba(79, 70, 229, 1)',
+            'borderWidth': 2,
+            'tension': 0.4,
+            'fill': True
+        }]
+    })
+
+
+@staff_required
+def chart_course_enrollment(request):
+    """Returns top courses by enrollment"""
+    courses = Course.objects.annotate(enrolled=Count('students')).order_by('-enrolled')[:5]
+    labels = [c.name for c in courses]
+    data = [c.enrolled for c in courses]
+    
+    return JsonResponse({
+        'labels': labels,
+        'datasets': [{
+            'data': data,
+            'backgroundColor': [
+                '#4f46e5', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'
+            ]
+        }]
+    })
+
+
+@staff_required
+def chart_department_stats(request):
+    """Returns distribution of lecturers by department"""
+    depts = Lecturer.objects.values('department').annotate(count=Count('id')).order_by('-count')
+    labels = [d['department'] if d['department'] else 'Other' for d in depts]
+    data = [d['count'] for d in depts]
+    
+    return JsonResponse({
+        'labels': labels,
+        'datasets': [{
+            'label': 'Lecturers per Dept',
+            'data': data,
+            'backgroundColor': 'rgba(59, 130, 246, 0.8)'
+        }]
+    })
+
+
 # ==================== Lecturers ====================
 
 @admin_required
