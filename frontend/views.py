@@ -116,6 +116,7 @@ def dashboard(request):
         context['total_lecturers'] = Lecturer.objects.count()
         context['total_courses'] = Course.objects.count()
         context['active_sessions'] = Attendance.objects.filter(is_active=True, date=timezone.localdate()).count()
+        context['recent_activity'] = Attendance.objects.select_related('course').order_by('-date', '-created_at')[:6]
     elif hasattr(request.user, 'lecturer'):
         try:
             if request.user.lecturer:
@@ -297,6 +298,9 @@ def ajax_dashboard_stats(request):
             'today_attendance': Attendance.objects.filter(date=timezone.localdate()).count(),
         }
         cache.set(cache_key, stats, 60)
+        
+    if request.headers.get('HX-Request'):
+        return render(request, 'partials/admin_stats.html', stats)
     return JsonResponse(stats)
 
 
