@@ -376,14 +376,23 @@ def chart_department_stats(request):
 
 @admin_required
 def lecturer_list(request):
-    """List all lecturers (admin only)"""
-    query = request.GET.get('q')
+    """List all lecturers (admin only) with HTMX sort & search"""
+    query = request.GET.get('q', '')
+    sort = request.GET.get('sort', 'name')
+    
+    lecturers = Lecturer.objects.select_related('user').all()
+    
     if query:
-        lecturers = Lecturer.objects.select_related('user').filter(
+        lecturers = lecturers.filter(
             Q(name__icontains=query) | Q(staff_id__icontains=query) | Q(department__icontains=query)
-        ).order_by('name')
+        )
+        
+    allowed_sorts = ['name', '-name', 'staff_id', '-staff_id', 'department', '-department']
+    if sort in allowed_sorts:
+        lecturers = lecturers.order_by(sort)
     else:
-        lecturers = Lecturer.objects.select_related('user').all().order_by('name')
+        lecturers = lecturers.order_by('name')
+        sort = 'name'
     
     paginator = Paginator(lecturers, 20)
     page = request.GET.get('page')
@@ -397,7 +406,11 @@ def lecturer_list(request):
     context = {
         'lecturers': lecturers_page,
         'query': query,
+        'sort': sort,
     }
+    
+    if request.headers.get('HX-Request'):
+        return render(request, 'partials/lecturer_list_content.html', context)
     return render(request, 'lecturers/list.html', context)
 
 
