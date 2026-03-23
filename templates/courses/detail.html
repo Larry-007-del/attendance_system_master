@@ -35,9 +35,11 @@
 </div>
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-  <div class="rounded-lg bg-white p-6 shadow">
-    <h2 class="mb-4 text-lg font-semibold text-gray-900">Course Details</h2>
-    <dl class="space-y-4">
+  <!-- Left Column -->
+  <div class="space-y-6">
+    <div class="rounded-lg bg-white p-6 shadow">
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">Course Details</h2>
+      <dl class="space-y-4">
       <div>
         <dt class="text-sm font-medium text-gray-500">Lecturer</dt>
         <dd class="text-gray-900">{{ course.lecturer.name }}</dd>
@@ -57,9 +59,12 @@
       </div>
     </dl>
   </div>
+  </div>
 
-  <div class="rounded-lg bg-white p-6 shadow lg:col-span-2">
-    <h2 class="mb-4 text-lg font-semibold text-gray-900">Enrolled Students</h2>
+  <!-- Right Column container -->
+  <div class="space-y-6 lg:col-span-2">
+    <div class="rounded-lg bg-white p-6 shadow">
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">Enrolled Students</h2>
     {% if enrollments %}
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
@@ -86,6 +91,42 @@
     {% else %}
     <p class="py-4 text-center text-gray-500">No students enrolled yet</p>
     {% endif %}
+  </div>
+
+  <!-- NEW: Attendance History Section -->
+  <div class="rounded-lg bg-white p-6 shadow">
+    <h2 class="mb-4 text-lg font-semibold text-gray-900">Attendance History</h2>
+    {% if attendances %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Date</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Duration</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for session in attendances %}
+          <tr>
+            <td class="px-4 py-2 text-sm text-gray-900">
+              <span class="font-medium">{{ session.date|date:"M d, Y" }}</span>
+            </td>
+            <td class="px-4 py-2 text-sm text-gray-500">
+              <span class="{% if session.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} rounded-full px-2.5 py-0.5 text-xs font-medium">
+                {% if session.is_active %}Open{% else %}Ended{% endif %}
+              </span>
+            </td>
+            <td class="px-4 py-2 text-sm text-gray-500">{{ session.duration_hours }}h</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="py-4 text-center text-gray-500">No attendance sessions logged yet</p>
+    {% endif %}
+  </div>
   </div>
 </div>
 {% endblock %}
