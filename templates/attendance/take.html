@@ -132,6 +132,7 @@
           method="post"
           action="{% url 'frontend:end_attendance' %}"
           onsubmit="return confirm('Are you sure you want to end this attendance session?');"
+          hx-boost="true"
         >
           {% csrf_token %}
           <input type="hidden" name="course_id" value="{{ active_session.course.id }}" />
@@ -186,7 +187,7 @@
       </h3>
     </div>
 
-    <form method="post" class="space-y-8 p-6 md:p-8" id="attendanceForm">
+    <form method="post" class="space-y-8 p-6 md:p-8" id="attendanceForm" hx-boost="true">
       {% csrf_token %}
 
       <div class="grid grid-cols-1 gap-8 md:grid-cols-2">

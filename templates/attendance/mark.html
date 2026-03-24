@@ -42,7 +42,7 @@
       </p>
     </div>
 
-    <form method="post" class="space-y-6" id="markForm">
+    <form method="post" class="space-y-6" id="markForm" hx-boost="true">
       {% csrf_token %}
       <input type="hidden" name="latitude" id="latitude" />
       <input type="hidden" name="longitude" id="longitude" />
