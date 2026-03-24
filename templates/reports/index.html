@@ -264,12 +264,20 @@
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      const ctx = document.getElementById('weeklyChart').getContext('2d');
+  (function() {
+      const canvas = document.getElementById('weeklyChart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
       const labels = {{ week_labels|safe }};
       const data = {{ week_counts|safe }};
 
-      new Chart(ctx, {
+      // Destroy previous instances to prevent Canvas duplication errors under HTMX SPA
+      if (window.weeklyTrendChart) {
+          window.weeklyTrendChart.destroy();
+      }
+
+      window.weeklyTrendChart = new Chart(ctx, {
           type: 'bar',
           data: {
               labels: labels,
@@ -316,6 +324,6 @@
               }
           }
       });
-  });
+  })();
 </script>
 {% endblock %}
