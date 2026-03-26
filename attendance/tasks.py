@@ -13,7 +13,7 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
 from django.utils import timezone
 
 from .models import Attendance, Course, CourseEnrollment, Student
@@ -263,6 +263,43 @@ def process_enrollment_upload(self, student_ids, course_id, uploader_email):
         try:
             self.retry(exc=exc)
         except self.MaxRetriesExceededError:
-            logger.error('Enrollment upload permanently failed after %d retries.', self.max_retries)
             _notify_upload_failure(uploader_email, 'Course Enrollment Upload', str(exc))
             raise
+
+
+@shared_task
+def send_weekly_attendance_reports():
+    """Celery Beat task to email weekly attendance summaries to all lecturers"""
+    one_week_ago = timezone.now() - timedelta(days=7)
+    active_courses = Course.objects.filter(is_active=True).select_related('lecturer__user')
+    
+    count = 0
+    for course in active_courses:
+        lecturer_email = course.lecturer.user.email
+        if not lecturer_email:
+            continue
+            
+        recent_sessions = Attendance.objects.filter(course=course, date__gte=one_week_ago)
+        if not recent_sessions.exists():
+            continue
+            
+        subject = f"Weekly Attendance Report: {course.name} ({course.course_code})"
+        body = f"Hello {course.lecturer.name},\n\nHere is your weekly summary for {course.name}:\n\n"
+        
+        for session in recent_sessions:
+            present = session.attendancestudent_set.count()
+            body += f"- {session.date.strftime('%Y-%m-%d')}: {present} students attended.\n"
+            
+        body += "\nLog into the Exodus Dashboard to download full CSV/Excel exports.\n\nBest,\nExodus System"
+        
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[lecturer_email],
+        )
+        email.send(fail_silently=True)
+        count += 1
+        
+    logger.info("Weekly attendance reports dispatched successfully. Sent %d emails.", count)
+    return f"Sent {count} weekly reports."

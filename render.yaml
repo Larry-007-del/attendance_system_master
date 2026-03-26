@@ -81,7 +81,7 @@ services:
     name: attendance-celery
     env: python
     buildCommand: "./build.sh"
-    startCommand: "celery -A attendance_system worker -l info"
+    startCommand: "celery -A attendance_system worker -B -l info"
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.6"

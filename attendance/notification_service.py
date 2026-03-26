@@ -103,23 +103,27 @@ def send_attendance_started_sms(student, course, token):
     phone_number = student.phone_number
     
     try:
-        # Try to send SMS using Arkesel if configured
-        if getattr(settings, 'ARKESEL_API_KEY', None):
-            import requests
-            headers = {'api-key': settings.ARKESEL_API_KEY}
-            data = {
-                'sender': getattr(settings, 'ARKESEL_SENDER_ID', 'Exodus'),
-                'message': message,
-                'recipients': [phone_number]
-            }
-            resp = requests.post('https://sms.arkesel.com/api/v2/sms/send', headers=headers, json=data)
-            resp.raise_for_status()
+        # Try to send SMS using Twilio if configured
+        if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_PHONE_NUMBER:
+            from twilio.rest import Client
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            client.messages.create(
+                body=message,
+                from_=settings.TWILIO_PHONE_NUMBER,
+                to=phone_number
+            )
+        # Try to send SMS using Africa's Talking if configured
+        elif settings.AFRICAS_TALKING_USERNAME and settings.AFRICAS_TALKING_API_KEY:
+            import africastalking
+            africastalking.initialize(settings.AFRICAS_TALKING_USERNAME, settings.AFRICAS_TALKING_API_KEY)
+            sms = africastalking.SMS
+            sms.send(message, [phone_number])
         else:
             # Fallback to simulation if no SMS service configured
             logger.info("Simulating SMS to %s: %s", phone_number, message)
         return True
     except ImportError as e:
-        logger.warning("SMS package not installed (pip install requests): %s", e)
+        logger.warning("SMS package not installed (pip install twilio / africastalking): %s", e)
         return False
     except Exception as e:
         logger.error("Failed to send SMS to %s: %s", phone_number, e)

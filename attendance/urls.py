@@ -2,6 +2,8 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
+from . import webauthn_views
+from . import calendar_views
 
 router = DefaultRouter()
 router.register(r'lecturers', views.LecturerViewSet, basename='lecturer')
@@ -21,4 +23,13 @@ urlpatterns = [
     path('student-attendance-history/', views.StudentAttendanceHistoryView.as_view(), name='student_attendance_history'),
     path('lecturer-attendance-history/', views.LecturerAttendanceHistoryView.as_view(), name='lecturer_attendance_history'),
     path('lecturer-location/', views.LecturerLocationView.as_view(), name='lecturer_location'),
+    
+    # WebAuthn Fingerprint endpoints
+    path('webauthn/register/begin/', webauthn_views.register_begin, name='webauthn_register_begin'),
+    path('webauthn/register/complete/', webauthn_views.register_complete, name='webauthn_register_complete'),
+    path('webauthn/authenticate/begin/', webauthn_views.authenticate_begin, name='webauthn_authenticate_begin'),
+    path('webauthn/authenticate/complete/', webauthn_views.authenticate_complete, name='webauthn_authenticate_complete'),
+    
+    # Calendar Export
+    path('courses/<int:course_id>/calendar.ics', calendar_views.course_ics_calendar, name='course_calendar'),
 ]

@@ -259,8 +259,55 @@
       });
     </script>
 
-    <!-- Load JSQR library -->
+    <!-- Load JSQR & SimpleWebAuthn library -->
     <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+
+    <script>
+      // Intercept the HTMX form submission to enforce Fingerprint verification if enabled
+      document.body.addEventListener('htmx:confirm', async function(evt) {
+        if (evt.target.id === 'markForm') {
+          evt.preventDefault(); // Pause the standard HTMX boost
+
+          const statusText = document.querySelector('.animate-pulse') || document.querySelector('.text-green-600');
+          const originalText = statusText.textContent;
+          statusText.textContent = 'Verifying Fingerprint...';
+          statusText.classList.remove('text-green-600');
+          statusText.classList.add('text-indigo-600');
+
+          try {
+            const resp = await fetch('/api/webauthn/authenticate/begin/');
+            if (!resp.ok) {
+              // No credentials registered or server warning. Proceed with standard form.
+              evt.detail.issueRequest();
+              return;
+            }
+            
+            const options = await resp.json();
+            const authResp = await SimpleWebAuthnBrowser.startAuthentication(options);
+            
+            const verifyResp = await fetch('/api/webauthn/authenticate/complete/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(authResp)
+            });
+            
+            const verification = await verifyResp.json();
+            if (verification.status === 'success') {
+              // Successfully verified fingerprint, unlock the request
+              evt.detail.issueRequest();
+            } else {
+              alert("Fingerprint verification failed: " + verification.error);
+              statusText.textContent = originalText;
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Fingerprint challenge was cancelled.");
+            statusText.textContent = originalText;
+          }
+        }
+      });
+    </script>
 
     <div class="mt-6 text-center text-sm text-gray-500">
       <p>Token is case-insensitive</p>

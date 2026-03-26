@@ -52,5 +52,13 @@ services:
       - redis
       - db
 
+  flutter_app:
+    build: 
+      context: ../exodus_mobile
+    ports:
+      - "8080:80"
+    depends_on:
+      - web
+
 volumes:
   postgres_data:

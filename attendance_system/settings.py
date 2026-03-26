@@ -395,9 +395,14 @@ SEND_WELCOME_EMAIL_ASYNC = os.environ.get(
 ).lower() == 'true'
 
 # SMS Configuration
-# Arkesel (Primary SMS Provider for African Regions)
-ARKESEL_API_KEY = os.environ.get('ARKESEL_API_KEY', '')
-ARKESEL_SENDER_ID = os.environ.get('ARKESEL_SENDER_ID', 'Exodus')
+# Twilio
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')
+
+# Africa's Talking (for African countries)
+AFRICAS_TALKING_USERNAME = os.environ.get('AFRICAS_TALKING_USERNAME', '')
+AFRICAS_TALKING_API_KEY = os.environ.get('AFRICAS_TALKING_API_KEY', '')
 
 # Logging Configuration - capture tracebacks in production console
 LOGGING = {
@@ -444,3 +449,12 @@ if not DEBUG:
         traces_sample_rate=0.2,  # Sample 20% of requests (reduce cost/overhead)
         send_default_pii=True
     )
+
+# Celery Beat Schedule
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'send-weekly-attendance-reports': {
+        'task': 'attendance.tasks.send_weekly_attendance_reports',
+        'schedule': crontab(day_of_week='fri', hour=17, minute=0), # Every Friday at 5 PM UTC
+    },
+}
