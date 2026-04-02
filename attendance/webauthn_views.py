@@ -98,6 +98,9 @@ def register_complete(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+from ratelimit.decorators import ratelimit
+
+@ratelimit(key='ip', rate='5/m', block=True)
 def authenticate_begin(request):
     """Generate options for biometric authentication"""
     # If the user is logged in (e.g., verifying attendance), use their specific credentials.
@@ -122,6 +125,7 @@ def authenticate_begin(request):
     return JsonResponse(json.loads(options_to_json(options)))
 
 @csrf_exempt
+@ratelimit(key='ip', rate='5/m', block=True)
 def authenticate_complete(request):
     """Verify WebAuthn authentication response"""
     if request.method != "POST":

@@ -29,6 +29,13 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 # Allowed hosts — default to localhost in dev; MUST be set via env var in production
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# Strict CORS origin bounds
+cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS')
+if cors_origins:
+    CORS_ALLOWED_ORIGINS = cors_origins.split(',')
+else:
+    CORS_ALLOW_ALL_ORIGINS = DEBUG # Only allow wildcards in strict dev sessions
+
 # CSRF Trusted Origins for production (Render)
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:

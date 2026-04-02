@@ -60,8 +60,8 @@ urlpatterns = [
     # Health check
     path('health/', health_view, name='health'),
 
-    # Django Admin
-    path('admin/', admin.site.urls),
+    # Django Admin Obfuscation (Prevents vulnerability scanners)
+    path('exodus-manage/', admin.site.urls),
 
     # Frontend URLs (including login/logout)
     path('', include('frontend.urls')),
