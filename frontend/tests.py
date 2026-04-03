@@ -1613,7 +1613,7 @@ class AdminDashboardStatsTest(FrontendViewsTestCase):
 
     def test_admin_index_has_stats(self):
         self.client.login(username='testadmin', password='testpassword123')
-        response = self.client.get('/admin/')
+        response = self.client.get('/exodus-manage/')
         self.assertEqual(response.status_code, 200)
         # Stats cards should show model counts
         self.assertContains(response, 'Students')
@@ -1626,7 +1626,7 @@ class AdminDashboardStatsTest(FrontendViewsTestCase):
 
     def test_admin_index_has_weekly_analytics_summary(self):
         self.client.login(username='testadmin', password='testpassword123')
-        response = self.client.get('/admin/')
+        response = self.client.get('/exodus-manage/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Sessions (Last 7 Days)')
         self.assertContains(response, 'Check-ins (Last 7 Days)')
@@ -1634,7 +1634,7 @@ class AdminDashboardStatsTest(FrontendViewsTestCase):
 
     def test_admin_index_uses_custom_template(self):
         self.client.login(username='testadmin', password='testpassword123')
-        response = self.client.get('/admin/')
+        response = self.client.get('/exodus-manage/')
         templates_used = [t.name for t in response.templates]
         self.assertIn('admin/exodus_index.html', templates_used)
 
