@@ -53,7 +53,7 @@
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
   <!-- Profile Info -->
-  <div class="rounded-lg bg-white p-6 shadow">
+  <div class="rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-md shadow-xl shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80">
     <h2 class="mb-4 text-lg font-semibold text-gray-900">Profile Information</h2>
     <dl class="space-y-4">
       <div>
@@ -79,15 +79,12 @@
   </div>
 
   <!-- Courses -->
-  <div class="rounded-lg bg-white p-6 shadow lg:col-span-2">
+  <div class="rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-md shadow-xl shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80 lg:col-span-2">
     <h2 class="mb-4 text-lg font-semibold text-gray-900">Courses ({{ courses.count }})</h2>
     {% if courses %}
     <div class="space-y-3">
       {% for course in courses %}
-      <a
-        href="{% url 'frontend:course_detail' course.id %}"
-        class="block rounded-lg border border-gray-200 p-4 transition hover:border-indigo-300 hover:bg-indigo-50"
-      >
+        class="block rounded-xl border border-gray-100 bg-white/50 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:bg-brand-50 hover:shadow-md dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:border-brand-700 dark:hover:bg-brand-900/30"
         <div class="flex items-center justify-between">
           <div>
             <p class="font-medium text-gray-900">{{ course.name }}</p>

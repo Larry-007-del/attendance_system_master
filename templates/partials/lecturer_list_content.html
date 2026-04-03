@@ -1,4 +1,4 @@
-<div class="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800">
+<div class="overflow-hidden rounded-2xl border border-gray-100 bg-white/80 backdrop-blur-md shadow-xl shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80">
   <!-- Desktop Table (hidden on mobile) -->
   <div class="hidden overflow-x-auto md:block">
     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -50,7 +50,7 @@
       </thead>
       <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
         {% for lecturer in lecturers %}
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+        <tr class="transition-colors duration-200 hover:bg-brand-50/50 dark:hover:bg-brand-900/20">
           <td class="whitespace-nowrap px-6 py-4">
             <div class="flex items-center">
               <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
@@ -92,7 +92,7 @@
   <!-- Mobile Cards (hidden on desktop) -->
   <div class="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
     {% for lecturer in lecturers %}
-    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
+    <div class="p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-brand-50/50 dark:hover:bg-brand-900/20">
       <div class="mb-3 flex items-center space-x-4">
         <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900">
           <span class="text-lg font-bold text-indigo-600 dark:text-indigo-300">{{ lecturer.name|first|upper }}</span>
