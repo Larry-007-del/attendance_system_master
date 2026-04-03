@@ -98,7 +98,7 @@ def register_complete(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-from ratelimit.decorators import ratelimit
+from django_ratelimit.decorators import ratelimit
 
 @ratelimit(key='ip', rate='5/m', block=True)
 def authenticate_begin(request):
