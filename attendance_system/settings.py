@@ -149,6 +149,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'anymail',  # Anymail for handling Resend emails bypass
     'rest_framework',  # Django REST Framework
     'rest_framework_simplejwt.token_blacklist',  # JWT token blacklisting for logout
     'cloudinary_storage',
@@ -394,14 +395,13 @@ if DEBUG:
     # Print emails to console in development (great for password-reset testing)
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@example.com')
+    # Use Resend API via Anymail in production to bypass Render SMTP port blocks
+    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+    ANYMAIL = {
+        "RESEND_API_KEY": os.environ.get('RESEND_API_KEY', 're_R2tQ2wdW_FSPWgkRy4GuH8ZbaUNWk6qzP')
+    }
+
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
 
 # Welcome email dispatch mode:
 # - Production default: async (non-blocking request flow)

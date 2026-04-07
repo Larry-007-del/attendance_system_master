@@ -1,4 +1,4 @@
-asgiref==3.11.1
+﻿asgiref==3.11.1
 Django==5.2
 django-cleanup==9.0.0
 django-cloudinary-storage==0.3.0
@@ -31,3 +31,4 @@ redis==5.0.3
 djangorestframework-simplejwt==5.3.1
 django-ratelimit==4.1.0
 twilio>=9.0.0
+django-anymail[resend]
