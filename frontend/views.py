@@ -140,7 +140,7 @@ def register_view(request):
         )
 
         # Auto-login after registration
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(request, f'Welcome to Exodus! Your Student ID is {student_id}.')
         return redirect('frontend:dashboard')
 
