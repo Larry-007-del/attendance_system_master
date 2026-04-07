@@ -529,6 +529,20 @@ def lecturer_create(request):
 def lecturer_detail(request, pk):
     """View lecturer details"""
     lecturer = get_object_or_404(Lecturer, pk=pk)
+    
+    # Access control: admin, the lecturer themselves, or a student enrolled in their courses
+    if not request.user.is_superuser:
+        if hasattr(request.user, 'lecturer') and request.user.lecturer.pk == lecturer.pk:
+            pass  # Lecturer can view their own profile
+        elif hasattr(request.user, 'student'):
+            # Only students in their courses can view
+            if not CourseEnrollment.objects.filter(student=request.user.student, course__lecturer=lecturer).exists():
+                 messages.error(request, 'You do not have permission to view this profile.')
+                 return redirect('frontend:dashboard')
+        else:
+            messages.error(request, 'You do not have permission to view this profile.')
+            return redirect('frontend:dashboard')
+
     courses = Course.objects.filter(lecturer=lecturer)
     
     context = {
@@ -1434,18 +1448,21 @@ def attendance_mark(request):
                     messages.error(request, 'You are too far from the classroom to check in.')
                     return render(request, 'attendance/mark.html')
                 
-                # Mark attendance with location coordinates
-                AttendanceStudent.objects.get_or_create(
-                    attendance=attendance,
-                    student=student,
-                    defaults={
-                        'latitude': lat_float if latitude else None,
-                        'longitude': lon_float if longitude else None
-                    }
-                )
-                
-                # CRITICAL FIX: Add student to present_students M2M field
-                attendance.present_students.add(student)
+                from django.db import transaction
+                with transaction.atomic():
+                    locked_attendance = Attendance.objects.select_for_update().get(pk=attendance.pk)
+                    # Mark attendance with location coordinates
+                    AttendanceStudent.objects.get_or_create(
+                        attendance=locked_attendance,
+                        student=student,
+                        defaults={
+                            'latitude': lat_float if latitude else None,
+                            'longitude': lon_float if longitude else None
+                        }
+                    )
+                    
+                    # CRITICAL FIX: Add student to present_students M2M field
+                    locked_attendance.present_students.add(student)
                 
                 messages.success(request, f'Attendance marked for {course.name}!')
             except Student.DoesNotExist:

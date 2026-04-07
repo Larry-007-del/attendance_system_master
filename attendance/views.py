@@ -271,6 +271,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         
         course = get_object_or_404(Course, id=course_id)
 
+        # Ownership check
+        if not request.user.is_superuser:
+            if not hasattr(request.user, 'lecturer') or course.lecturer != request.user.lecturer:
+                return api_error('You do not have permission to view attendance for this course.', APIErrorCode.COURSE_FORBIDDEN, status.HTTP_403_FORBIDDEN)
+        
         class Echo:
             """An object that implements just the write method of the file-like interface."""
             def write(self, value):
@@ -525,17 +530,22 @@ class SubmitLocationView(generics.GenericAPIView):
             if hasattr(user, 'student'):
                 student = user.student
                 if token.course.students.filter(pk=student.pk).exists():
+                    from django.db import transaction
+                    
                     # Add student to attendance with location coordinates
-                    AttendanceStudent.objects.get_or_create(
-                        attendance=attendance,
-                        student=student,
-                        defaults={
-                            'latitude': latitude,
-                            'longitude': longitude
-                        }
-                    )
-                    # CRITICAL FIX: Add student to present_students M2M field
-                    attendance.present_students.add(student)
+                    with transaction.atomic():
+                        locked_attendance = Attendance.objects.select_for_update().get(pk=attendance.pk)
+                        AttendanceStudent.objects.get_or_create(
+                            attendance=locked_attendance,
+                            student=student,
+                            defaults={
+                                'latitude': latitude,
+                                'longitude': longitude
+                            }
+                        )
+                        # CRITICAL FIX: Add student to present_students M2M field
+                        locked_attendance.present_students.add(student)
+                        
                     return Response({'status': 'Attendance marked successfully'}, status=status.HTTP_200_OK)
             return api_error('Student not enrolled in this course', APIErrorCode.STUDENT_NOT_ENROLLED, status.HTTP_400_BAD_REQUEST)
 

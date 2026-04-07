@@ -6,7 +6,21 @@ from .models import Course
 
 def course_ics_calendar(request, course_id):
     """Generates an ICS calendar file for a given course allowing easy imports."""
+    if not request.user.is_authenticated:
+        return HttpResponse("Unauthorized", status=401)
+        
     course = get_object_or_404(Course, id=course_id)
+    
+    # Ownership/enrollment check
+    if not request.user.is_superuser:
+        if hasattr(request.user, 'lecturer'):
+            if course.lecturer.user != request.user:
+                return HttpResponse("Forbidden", status=403)
+        elif hasattr(request.user, 'student'):
+            if not course.students.filter(user=request.user).exists():
+                return HttpResponse("Forbidden", status=403)
+        else:
+             return HttpResponse("Forbidden", status=403)
     
     # Mocking standard weekly recurrences based on course creation or today
     now = timezone.now()
