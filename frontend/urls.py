@@ -87,6 +87,7 @@ urlpatterns = [
     path('api/charts/weekly-attendance/', views.chart_weekly_attendance, name='chart_weekly_attendance'),
     path('api/charts/course-enrollment/', views.chart_course_enrollment, name='chart_course_enrollment'),
     path('api/charts/department-stats/', views.chart_department_stats, name='chart_department_stats'),
+    path('api/charts/lecturer-course-stats/', views.chart_lecturer_course_stats, name='chart_lecturer_course_stats'),
     path('api/charts/student-history/', views.chart_student_history, name='chart_student_history'),
     path('api/charts/student-course-breakdown/', views.chart_student_course_breakdown, name='chart_student_course_breakdown'),
     path('api/task-status/<str:task_id>/', views.task_status, name='task_status'),

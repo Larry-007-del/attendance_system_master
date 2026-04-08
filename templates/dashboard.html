@@ -202,7 +202,32 @@
     {% endfor %}
   </div>
 </div>
-{% endif %} {% if is_lecturer and taught_courses %}
+{% endif %}
+
+{% if is_lecturer %}
+  {% if active_session %}
+  <div class="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 shadow-lg shadow-emerald-500/10 dark:border-emerald-900/50 dark:bg-emerald-900/20">
+    <div class="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+      <div class="mb-4 sm:mb-0">
+        <h5 class="flex items-center text-xl font-bold tracking-tight text-emerald-900 dark:text-emerald-100">Active Session Running</h5>
+        <p class="text-sm mt-1 text-emerald-700 dark:text-emerald-300">You have an ongoing attendance session for <strong>{{ active_session.course.name }}</strong>.</p>
+      </div>
+      <a href="{% url 'frontend:attendance_take' %}" class="inline-flex rounded-xl bg-emerald-600 px-6 py-2.5 text-center font-semibold text-white transition-all hover:bg-emerald-700">Manage Session</a>
+    </div>
+  </div>
+  {% endif %}
+
+<div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <div class="lg:col-span-2 rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-md shadow-lg shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80">
+    <h5 class="mb-4 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Average Attendance Per Course</h5>
+    <div class="relative h-64 w-full">
+      <canvas id="lecturerCourseChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if is_lecturer and taught_courses %}
 <div
   class="mb-6 rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-md shadow-lg shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80"
 >
@@ -307,7 +332,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if is_admin or is_student %}
+{% if is_admin or is_student or is_lecturer %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -410,6 +435,33 @@
               scales: {
                 x: { stacked: true },
                 y: { stacked: true }
+              }
+            }
+          });
+        }
+      });
+    {% endif %}
+
+    {% if is_lecturer %}
+    // Lecturer Course Average Attendance
+    fetch('{% url "frontend:chart_lecturer_course_stats" %}')
+      .then(res => res.json())
+      .then(data => {
+        const ctx = document.getElementById('lecturerCourseChart');
+        if(ctx) {
+          new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: { callback: function(value) { return value + "%" } }
+                }
               }
             }
           });

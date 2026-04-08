@@ -198,6 +198,7 @@ def dashboard(request):
                 ).select_related('course').first()
                 if active_session:
                     context['next_class'] = f"{active_session.course.name} (Live now)"
+                    context['active_session'] = active_session
                 else:
                     context['next_class'] = f"{taught_courses.count()} course{'s' if taught_courses.count() != 1 else ''} assigned"
         except Lecturer.DoesNotExist:
@@ -431,6 +432,47 @@ def chart_department_stats(request):
             'label': 'Lecturers per Dept',
             'data': data,
             'backgroundColor': 'rgba(59, 130, 246, 0.8)'
+        }]
+    })
+
+@login_required
+def chart_lecturer_course_stats(request):
+    """Returns average attendance percentage per course taught by lecturer"""
+    if not hasattr(request.user, 'lecturer'):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+    lecturer = request.user.lecturer
+    courses = Course.objects.filter(lecturer=lecturer).prefetch_related('students')
+    
+    labels = []
+    rates = []
+    
+    for course in courses:
+        labels.append(course.course_code)
+        
+        sessions = Attendance.objects.filter(course=course)
+        total_sessions = sessions.count()
+        enrolled_students = course.students.count()
+        
+        if total_sessions == 0 or enrolled_students == 0:
+            rates.append(0)
+            continue
+            
+        total_possible_attendances = total_sessions * enrolled_students
+        total_actual_attendances = sum(session.present_students.count() for session in sessions)
+        
+        rate = round((total_actual_attendances / total_possible_attendances) * 100)
+        rates.append(rate)
+        
+    return JsonResponse({
+        'labels': labels,
+        'datasets': [{
+            'label': 'Average Attendance (%)',
+            'data': rates,
+            'backgroundColor': 'rgba(139, 92, 246, 0.5)', # Violet
+            'borderColor': '#8b5cf6',
+            'borderWidth': 1,
+            'borderRadius': 4
         }]
     })
 
