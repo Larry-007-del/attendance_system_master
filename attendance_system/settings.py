@@ -395,13 +395,13 @@ if DEBUG:
     # Print emails to console in development (great for password-reset testing)
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    # Use Resend API via Anymail in production to bypass Render SMTP port blocks
-    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+    # Use Brevo/Sendinblue API via Anymail in production to bypass Render SMTP port blocks
+    EMAIL_BACKEND = 'anymail.backends.sendinblue.EmailBackend'
     ANYMAIL = {
-        "RESEND_API_KEY": os.environ.get('RESEND_API_KEY', 're_R2tQ2wdW_FSPWgkRy4GuH8ZbaUNWk6qzP')
+        "SENDINBLUE_API_KEY": os.environ.get('BREVO_API_KEY', '')
     }
 
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@yourdomain.com')
 
 # Welcome email dispatch mode:
 # - Production default: async (non-blocking request flow)
