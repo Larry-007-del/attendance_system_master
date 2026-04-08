@@ -13,6 +13,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register_view, name='register'),
+    path('api/save-fcm-token/', views.save_fcm_token, name='save_fcm_token'),
     
     # Password Reset
     path('password-reset/', auth_views.PasswordResetView.as_view(

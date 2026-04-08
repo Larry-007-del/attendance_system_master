@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.utils.http import url_has_allowed_host_and_scheme
 import secrets
@@ -2323,3 +2324,23 @@ def error_404(request, exception):
 def error_500(request):
     """Custom 500 page"""
     return render(request, 'errors/500.html', status=500)
+
+@require_POST
+@login_required
+def save_fcm_token(request):
+    try:
+        import json
+        data = json.loads(request.body)
+        token = data.get('token')
+        if token:
+            if hasattr(request.user, 'student'):
+                request.user.student.fcm_token = token
+                request.user.student.save()
+            elif hasattr(request.user, 'lecturer'):
+                request.user.lecturer.fcm_token = token
+                request.user.lecturer.save()
+            return JsonResponse({'status': 'success'})
+    except Exception as e:
+        pass
+    return JsonResponse({'status': 'error'}, status=400)
+

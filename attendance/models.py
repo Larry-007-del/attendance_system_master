@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -22,6 +22,7 @@ class Lecturer(models.Model):
     require_two_factor_auth = models.BooleanField(default=False)  # 2FA setting
     two_factor_secret = models.CharField(max_length=100, blank=True, null=True)
     is_two_factor_enabled = models.BooleanField(default=False)
+    fcm_token = models.CharField(max_length=255, blank=True, null=True, help_text="Firebase Notification Token")
 
     def __str__(self):
         return f"{self.name} ({self.staff_id})"
@@ -51,6 +52,7 @@ class Student(models.Model):
     require_two_factor_auth = models.BooleanField(default=False)  # 2FA setting
     two_factor_secret = models.CharField(max_length=100, blank=True, null=True)
     is_two_factor_enabled = models.BooleanField(default=False)
+    fcm_token = models.CharField(max_length=255, blank=True, null=True, help_text="Firebase Notification Token")
     
     NOTIFICATION_CHOICES = [
         ('email', 'Email'),
@@ -302,3 +304,4 @@ class AttendanceToken(models.Model):
             self.qr_code = SimpleUploadedFile(filename, qr_buffer.read(), content_type='image/png')
 
         super().save(*args, **kwargs)
+
