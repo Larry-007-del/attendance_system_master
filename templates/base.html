@@ -111,10 +111,14 @@
                   class="group flex items-center gap-2.5 rounded-xl px-2 py-1 transition hover:bg-gray-100 dark:hover:bg-gray-700"
                   title="Go to profile"
                 >
-                  <span
-                    class="{{ avatar_color }} inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-white shadow-sm transition group-hover:scale-105 dark:ring-gray-800"
-                    aria-hidden="true"
-                  >{{ avatar_initials }}</span>
+                  {% if avatar_url %}
+                    <img src="{{ avatar_url }}" alt="Avatar" class="inline-flex h-8 w-8 flex-shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm transition group-hover:scale-105 dark:ring-gray-800" />
+                  {% else %}
+                    <span
+                      class="{{ avatar_color }} inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ring-2 ring-white shadow-sm transition group-hover:scale-105 dark:ring-gray-800"
+                      aria-hidden="true"
+                    >{{ avatar_initials }}</span>
+                  {% endif %}
                   <span class="hidden text-sm font-medium text-gray-900 dark:text-gray-200 md:block">
                     {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
                   </span>
@@ -500,10 +504,14 @@
           href="{% url 'frontend:profile' %}"
           class="group flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-gray-100 dark:hover:bg-gray-700"
         >
-          <span
-            class="{{ avatar_color }} inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow transition group-hover:scale-105"
-            aria-hidden="true"
-          >{{ avatar_initials }}</span>
+          {% if avatar_url %}
+            <img src="{{ avatar_url }}" alt="Avatar" class="inline-flex h-9 w-9 flex-shrink-0 rounded-full object-cover shadow transition group-hover:scale-105" />
+          {% else %}
+            <span
+              class="{{ avatar_color }} inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow transition group-hover:scale-105"
+              aria-hidden="true"
+            >{{ avatar_initials }}</span>
+          {% endif %}
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">
               {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}

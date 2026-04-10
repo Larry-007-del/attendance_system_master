@@ -9,19 +9,29 @@ def user_avatar(request):
     Returns:
         avatar_initials:  1–2 letter string (e.g. "JD" for John Doe)
         avatar_color:     Tailwind colour class for the avatar background
+        avatar_url:       Absolute URL to the real profile picture, if uploaded
     """
     if not request.user.is_authenticated:
         return {}
 
+    user = request.user
+    avatar_url = None
+
+    # Try to fetch real profile picture from related models
+    if hasattr(user, 'student') and getattr(user.student, 'profile_picture'):
+        avatar_url = user.student.profile_picture.url
+    elif hasattr(user, 'lecturer') and getattr(user.lecturer, 'profile_picture'):
+        avatar_url = user.lecturer.profile_picture.url
+
     # Build initials
-    first = (request.user.first_name or '').strip()
-    last = (request.user.last_name or '').strip()
+    first = (user.first_name or '').strip()
+    last = (user.last_name or '').strip()
     if first and last:
         initials = (first[0] + last[0]).upper()
     elif first:
         initials = first[:2].upper()
-    elif request.user.username:
-        initials = request.user.username[:2].upper()
+    elif user.username:
+        initials = user.username[:2].upper()
     else:
         initials = 'U'
 
@@ -38,9 +48,10 @@ def user_avatar(request):
         'bg-fuchsia-500',
         'bg-lime-500',
     ]
-    colour = COLOURS[hash(request.user.username) % len(COLOURS)]
+    colour = COLOURS[hash(user.username) % len(COLOURS)]
 
     return {
         'avatar_initials': initials,
         'avatar_color': colour,
+        'avatar_url': avatar_url,
     }
