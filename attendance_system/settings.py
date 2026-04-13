@@ -357,7 +357,7 @@ AUTHENTICATION_BACKENDS = (
     'attendance.authentication_backends.EmailBackend',
     'attendance.authentication_backends.StudentBackend',
     'attendance.authentication_backends.StaffBackend',
-    'django.contrib.auth.backends.ModelBackend',  # Fallback: username + password (for superusers)
+    'django.contrib.auth.backends.ModelBackend',
 )
 
 # CORS settings

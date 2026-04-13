@@ -8,7 +8,7 @@
             hx-get="{% url 'frontend:lecturer_list' %}?sort={% if sort == 'name' %}-name{% else %}name{% endif %}&q={{ query }}"
             hx-target="#lecturer-list-container"
             hx-push-url="true"
-            class="group cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            class="group cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-800 dark:text-gray-300 font-bold hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
           >
             Name
             <span class="ml-1 inline-block">
@@ -19,7 +19,7 @@
             hx-get="{% url 'frontend:lecturer_list' %}?sort={% if sort == 'staff_id' %}-staff_id{% else %}staff_id{% endif %}&q={{ query }}"
             hx-target="#lecturer-list-container"
             hx-push-url="true"
-            class="group cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            class="group cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-800 dark:text-gray-300 font-bold hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
           >
             Staff ID
             <span class="ml-1 inline-block">
@@ -30,20 +30,20 @@
             hx-get="{% url 'frontend:lecturer_list' %}?sort={% if sort == 'department' %}-department{% else %}department{% endif %}&q={{ query }}"
             hx-target="#lecturer-list-container"
             hx-push-url="true"
-            class="group cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            class="group cursor-pointer px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-800 dark:text-gray-300 font-bold hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
           >
             Department
             <span class="ml-1 inline-block">
               {% if sort == 'department' %}↑{% elif sort == '-department' %}↓{% else %}<span class="text-transparent group-hover:text-gray-300">↕</span>{% endif %}
             </span>
           </th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-800 dark:text-gray-300 font-bold dark:text-gray-400">
             Phone
           </th>
-          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-800 dark:text-gray-300 font-bold dark:text-gray-400">
             Courses
           </th>
-          <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-800 dark:text-gray-300 font-bold dark:text-gray-400">
             Actions
           </th>
         </tr>
