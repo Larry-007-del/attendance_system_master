@@ -600,21 +600,23 @@ class AttendanceAPITest(APIAuthTestCase):
     @override_settings(DEFAULT_FILE_STORAGE='django.core.files.storage.InMemoryStorage')
     def test_take_attendance_valid(self):
         self.auth_as_user(self.stu_user)
+        from decimal import Decimal
         Attendance.objects.create(
-            course=self.course, date=timezone.localdate(), is_active=True
+            course=self.course, date=timezone.localdate(), is_active=True,
+            lecturer_latitude=Decimal('5.650000'), lecturer_longitude=Decimal('-0.187000')
         )
         AttendanceToken.objects.create(
             course=self.course, token='VALID1', is_active=True
         )
         response = self.client.post(
-            '/api/courses/take_attendance/', {'token': 'VALID1'},
+            '/api/courses/take_attendance/', {'token': 'VALID1', 'latitude': '5.650000', 'longitude': '-0.187000'},
         )
         self.assertEqual(response.status_code, 200)
 
     def test_take_attendance_invalid_token(self):
         self.auth_as_user(self.stu_user)
         response = self.client.post(
-            '/api/courses/take_attendance/', {'token': 'NOPE'},
+            '/api/courses/take_attendance/', {'token': 'NOPE', 'latitude': '5.650000', 'longitude': '-0.187000'},
         )
         self.assertEqual(response.status_code, 400)
 
