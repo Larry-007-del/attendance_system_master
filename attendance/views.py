@@ -576,7 +576,18 @@ class SubmitLocationView(generics.GenericAPIView):
                     return Response({'status': 'Attendance marked successfully'}, status=status.HTTP_200_OK)
             return api_error('Student not enrolled in this course', APIErrorCode.STUDENT_NOT_ENROLLED, status.HTTP_400_BAD_REQUEST)
 
-        return api_error('Location is out of range', APIErrorCode.LOCATION_OUT_OF_RANGE, status.HTTP_400_BAD_REQUEST)
+        # Calculate exact distance using geopy
+        from geopy.distance import geodesic
+        lecturer_location = (attendance.lecturer_latitude, attendance.lecturer_longitude)
+        student_location = (lat_float, lon_float)
+        distance_km = geodesic(lecturer_location, student_location).kilometers
+        distance_meters = distance_km * 1000
+        
+        return api_error(
+            f'Location is out of range. Distance: {distance_meters:.2f}m (Max 50m)', 
+            APIErrorCode.LOCATION_OUT_OF_RANGE, 
+            status.HTTP_400_BAD_REQUEST
+        )
 
 # Student Attendance History View
 
@@ -666,12 +677,22 @@ class LecturerLocationView(APIView):
                 else:
                     return api_error('Unauthorized.', APIErrorCode.UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
-            if lecturer.latitude is None or lecturer.longitude is None:
-                return api_error('Lecturer coordinates not set.', APIErrorCode.LECTURER_COORDINATES_NOT_SET, status.HTTP_400_BAD_REQUEST)
+            # Get active attendance session for today
+            attendance = Attendance.objects.filter(
+                course=course,
+                date=timezone.localdate(),
+                is_active=True
+            ).first()
+
+            if not attendance:
+                return api_error('No active attendance session for this course today.', APIErrorCode.SESSION_EXPIRED, status.HTTP_400_BAD_REQUEST)
+
+            if attendance.lecturer_latitude is None or attendance.lecturer_longitude is None:
+                return api_error('Session coordinates not set.', APIErrorCode.LECTURER_COORDINATES_NOT_SET, status.HTTP_400_BAD_REQUEST)
 
             return Response({
-                'longitude': lecturer.longitude,
-                'latitude': lecturer.latitude,
+                'longitude': attendance.lecturer_longitude,
+                'latitude': attendance.lecturer_latitude,
                 'token': token.token
             }, status=status.HTTP_200_OK)
 

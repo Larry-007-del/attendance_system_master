@@ -196,6 +196,57 @@
 
                 const token = qrCode.data.replace('attendance_token:', '').trim();
                 tokenInput.value = token;
+                
+                // Immediately check session validity & distance without submitting
+                if (currentPosition) {
+                  updateStatus("Validating session...", false, false);
+                  const checkData = new FormData();
+                  checkData.append('token', token);
+                  checkData.append('csrfmiddlewaretoken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
+                  
+                  fetch('{% url "lecturer_location" %}', {
+                      method: 'POST',
+                      headers: {'Accept': 'application/json'},
+                      body: checkData
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                      if(data.error) {
+                          alert(`Session Error: ${data.error}`);
+                          updateStatus("Session Offline", true, true);
+                          tokenInput.value = '';
+                      } else {
+                          // Session works, plot lecturer on map
+                          const lLat = parseFloat(data.latitude);
+                          const lLng = parseFloat(data.longitude);
+                          const sLat = currentPosition.coords.latitude;
+                          const sLng = currentPosition.coords.longitude;
+                          
+                          // Calculate basic haversine distance in meters
+                          const R = 6371e3;
+                          const p1 = sLat * Math.PI/180;
+                          const p2 = lLat * Math.PI/180;
+                          const dp = (lLat-sLat) * Math.PI/180;
+                          const dl = (lLng-sLng) * Math.PI/180;
+                          const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+                          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                          const distance = R * c;
+                          
+                          L.circle([lLat, lLng], {color: 'green', fillColor: '#10b981', fillOpacity: 0.1, radius: 50}).addTo(map);
+                          L.marker([lLat, lLng]).addTo(map).bindPopup('Lecturer').openPopup();
+                          
+                          const distMsg = Math.round(distance) + 'm';
+                          if (distance <= 50) {
+                              updateStatus(`Session Ready. Distance: ${distMsg} (Valid)`, false, false);
+                          } else {
+                              updateStatus(`Session Ready. Distance: ${distMsg} (Too Far!)`, true, true);
+                          }
+                      }
+                  })
+                  .catch(e => {
+                     updateStatus(`Session Error: ${e.message}`, true, true);
+                  });
+                }
                 // Ask user to click Check In rather than auto-submitting in case GPS needs retry
               }
             }
