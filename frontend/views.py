@@ -438,39 +438,56 @@ def chart_department_stats(request):
 
 @login_required
 def chart_lecturer_course_stats(request):
-    """Returns average attendance percentage per course taught by lecturer"""
+    """Returns average attendance percentage per course taught by lecturer.
+
+    Uses a single aggregated query instead of N+1 per-session loops.
+    """
     if not hasattr(request.user, 'lecturer'):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
-        
+
     lecturer = request.user.lecturer
-    courses = Course.objects.filter(lecturer=lecturer).prefetch_related('students')
-    
+
+    # Annotate each course with session count and enrolled count in one pass
+    courses = (
+        Course.objects.filter(lecturer=lecturer)
+        .annotate(
+            total_sessions=Count('attendance', distinct=True),
+            enrolled_count=Count('students', distinct=True),
+        )
+    )
+
+    # Aggregate actual attendances per course in a single query
+    # AttendanceStudent links each marked attendance to a student
+    actual_counts = (
+        AttendanceStudent.objects
+        .filter(attendance__course__lecturer=lecturer)
+        .values('attendance__course_id')
+        .annotate(actual=Count('id'))
+    )
+    actual_by_course = {row['attendance__course_id']: row['actual'] for row in actual_counts}
+
     labels = []
     rates = []
-    
+
     for course in courses:
         labels.append(course.course_code)
-        
-        sessions = Attendance.objects.filter(course=course)
-        total_sessions = sessions.count()
-        enrolled_students = course.students.count()
-        
+        total_sessions = course.total_sessions
+        enrolled_students = course.enrolled_count
+
         if total_sessions == 0 or enrolled_students == 0:
             rates.append(0)
             continue
-            
-        total_possible_attendances = total_sessions * enrolled_students
-        total_actual_attendances = sum(session.present_students.count() for session in sessions)
-        
-        rate = round((total_actual_attendances / total_possible_attendances) * 100)
-        rates.append(rate)
-        
+
+        total_possible = total_sessions * enrolled_students
+        total_actual = actual_by_course.get(course.pk, 0)
+        rates.append(round((total_actual / total_possible) * 100))
+
     return JsonResponse({
         'labels': labels,
         'datasets': [{
             'label': 'Average Attendance (%)',
             'data': rates,
-            'backgroundColor': 'rgba(139, 92, 246, 0.5)', # Violet
+            'backgroundColor': 'rgba(139, 92, 246, 0.5)',  # Violet
             'borderColor': '#8b5cf6',
             'borderWidth': 1,
             'borderRadius': 4
@@ -1287,6 +1304,44 @@ def upload_enrollments(request):
 
 
 @login_required
+def join_course(request):
+    """Student view to join a course using a code"""
+    if not hasattr(request.user, 'student'):
+        messages.error(request, "Only students can join courses via code.")
+        return redirect('frontend:dashboard')
+
+    if request.method == 'POST':
+        join_code = request.POST.get('join_code', '').strip().upper()
+        if not join_code:
+            messages.error(request, "Please enter a valid join code.")
+            return redirect('frontend:join_course')
+
+        try:
+            course = Course.objects.get(join_code=join_code)
+            
+            # Check if active
+            if not course.is_active:
+                messages.warning(request, "This course is currently inactive.")
+                return redirect('frontend:join_course')
+
+            # Check if already enrolled
+            if CourseEnrollment.objects.filter(course=course, student=request.user.student).exists():
+                messages.info(request, f"You are already enrolled in {course.course_code}.")
+                return redirect('frontend:my_courses')
+
+            # Enroll
+            CourseEnrollment.objects.create(course=course, student=request.user.student)
+            messages.success(request, f"Successfully enrolled in {course.name} ({course.course_code})!")
+            return redirect('frontend:my_courses')
+
+        except Course.DoesNotExist:
+            messages.error(request, "Invalid join code. Please try again.")
+            return redirect('frontend:join_course')
+
+    return render(request, 'courses/join.html')
+
+
+@login_required
 def task_status(request, task_id):
     """Return the status of a Celery task as JSON for polling."""
     from celery.result import AsyncResult
@@ -1537,14 +1592,13 @@ def attendance_mark(request):
                     messages.error(request, 'You are not enrolled in this course!')
                     return render(request, 'attendance/mark.html')
                 
-                # Get attendance session
-                try:
-                    attendance = Attendance.objects.get(
-                        course=course, 
-                        date=timezone.localdate(),
-                        is_active=True
-                    )
-                except Attendance.DoesNotExist:
+                # Get active attendance session
+                attendance = Attendance.objects.filter(
+                    course=course, 
+                    is_active=True
+                ).first()
+                
+                if not attendance:
                     messages.error(request, 'No active attendance session found for this course today.')
                     return render(request, 'attendance/mark.html')
                 
@@ -1578,12 +1632,6 @@ def attendance_mark(request):
                             # Verify WebAuthn was completed via session flag
                             if not request.session.pop('webauthn_2fa_verified', False):
                                 messages.error(request, 'Biometric verification failed. Please try again.')
-                                return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
-                        elif two_factor_method == 'app_biometric':
-                            # Native Mobile bypass
-                            app_token = request.POST.get('app_bypass_token', '')
-                            if app_token != 'flutter_native_auth_verified_true':
-                                messages.error(request, 'Native biometric authentication failed. Please try again.')
                                 return render(request, 'attendance/two_factor_challenge.html', two_fa_context)
                         elif two_factor_method == 'otp':
                             # Verify OTP code using pyotp
@@ -1831,69 +1879,95 @@ def attendance_history(request):
 
 @login_required
 def reports_index(request):
-    """Reports dashboard with real analytics"""
-    from collections import defaultdict
+    """Reports dashboard with real analytics — O(1) DB queries regardless of scale."""
     import json
-    
+
     # ---- Role-scoped base querysets ----
     if hasattr(request.user, 'lecturer'):
         courses = Course.objects.filter(lecturer=request.user.lecturer)
-        attendances = Attendance.objects.filter(course__lecturer=request.user.lecturer)
+        attendances_qs = Attendance.objects.filter(course__lecturer=request.user.lecturer)
     elif hasattr(request.user, 'student'):
         courses = Course.objects.filter(students=request.user.student)
-        attendances = Attendance.objects.filter(course__in=courses)
+        attendances_qs = Attendance.objects.filter(course__in=courses)
     elif request.user.is_superuser:
         courses = Course.objects.all()
-        attendances = Attendance.objects.all()
+        attendances_qs = Attendance.objects.all()
     else:
         courses = Course.objects.none()
-        attendances = Attendance.objects.none()
-    
-    attendances = attendances.select_related('course').prefetch_related('present_students')
-    
-    # ---- Summary stats ----
-    total_records = attendances.count()
+        attendances_qs = Attendance.objects.none()
+
+    # ---- Summary stats (4 single-query counts) ----
+    total_records = attendances_qs.count()
     total_courses = courses.count()
-    total_students = Student.objects.filter(enrolled_courses__in=courses).distinct().count()
-    active_sessions = attendances.filter(is_active=True).count()
     
-    # ---- Per-course attendance rates ----
+    if request.user.is_superuser:
+        total_students = Student.objects.count()
+    else:
+        total_students = Student.objects.filter(enrolled_courses__in=courses).distinct().count()
+    active_sessions = attendances_qs.filter(is_active=True).count()
+
+    # ---- Per-course attendance rates — O(3) queries total ----
+    # 1. Session count + enrolled count per course (one aggregated query)
+    from django.db.models import Count as _Count
+    course_session_counts = {
+        row['id']: row['session_count']
+        for row in courses.annotate(session_count=_Count('attendance', distinct=True)).values('id', 'session_count')
+    }
+    course_enrolled_counts = {
+        row['id']: row['enrolled_count']
+        for row in courses.annotate(enrolled_count=_Count('students', distinct=True)).values('id', 'enrolled_count')
+    }
+    # 2. Total present marks per course (one aggregated query across all sessions)
+    from attendance.models import AttendanceStudent
+    course_present_totals = {
+        row['attendance__course_id']: row['total']
+        for row in AttendanceStudent.objects.filter(
+            attendance__in=attendances_qs
+        ).values('attendance__course_id').annotate(total=_Count('id'))
+    }
+
     course_stats = []
-    for course in courses.select_related('lecturer').prefetch_related('students'):
-        enrolled = course.students.count()
-        sessions = attendances.filter(course=course).annotate(
-            present_count=Count('present_students')
-        )
-        session_count = sessions.count()
-        if session_count > 0 and enrolled > 0:
-            total_marks = sum(s.present_count for s in sessions)
-            rate = round((total_marks / (session_count * enrolled)) * 100)
+    for course in courses.only('id', 'name', 'course_code'):
+        sessions = course_session_counts.get(course.id, 0)
+        enrolled = course_enrolled_counts.get(course.id, 0)
+        total_marks = course_present_totals.get(course.id, 0)
+        if sessions > 0 and enrolled > 0:
+            rate = round((total_marks / (sessions * enrolled)) * 100)
         else:
             rate = 0
         course_stats.append({
             'name': course.name,
             'code': course.course_code,
-            'sessions': session_count,
+            'sessions': sessions,
             'enrolled': enrolled,
             'rate': rate,
         })
     course_stats.sort(key=lambda c: c['rate'], reverse=True)
-    
-    # ---- Weekly trend (last 8 weeks) ----
+
+    # ---- Weekly trend (last 8 weeks) — single annotated date-range query ----
     today = timezone.localdate()
+    week_start = today - timedelta(weeks=8)
+    # Pull all session dates in the range in one query
+    session_dates = list(
+        attendances_qs.filter(date__gte=week_start)
+        .values_list('date', flat=True)
+    )
     week_labels = []
     week_counts = []
     for i in range(7, -1, -1):
-        start = today - timedelta(weeks=i+1)
+        start = today - timedelta(weeks=i + 1)
         end = today - timedelta(weeks=i)
-        label = end.strftime('%b %d')
-        count = attendances.filter(date__gte=start, date__lt=end).count()
-        week_labels.append(label)
-        week_counts.append(count)
-    
-    # ---- Recent sessions ----
-    recent_sessions = attendances.order_by('-date', '-created_at')[:10]
-    
+        week_labels.append(end.strftime('%b %d'))
+        week_counts.append(sum(1 for d in session_dates if start <= d < end))
+
+    # ---- Recent sessions (prefetched to avoid per-row count queries) ----
+    recent_sessions = (
+        attendances_qs
+        .select_related('course')
+        .prefetch_related('present_students')
+        .order_by('-date', '-created_at')[:10]
+    )
+
     context = {
         'total_records': total_records,
         'total_courses': total_courses,
@@ -1906,6 +1980,7 @@ def reports_index(request):
         'courses': courses,
     }
     return render(request, 'reports/index.html', context)
+
 
 
 @login_required
@@ -2334,19 +2409,47 @@ def error_500(request):
 @require_POST
 @login_required
 def save_fcm_token(request):
+    """Save the Firebase Cloud Messaging (FCM) device token for the current user.
+
+    Validates that the token is a non-empty string within the FCM spec length
+    limit (4096 characters) before persisting it.
+    """
+    import json
+    import re
+
     try:
-        import json
         data = json.loads(request.body)
-        token = data.get('token')
-        if token:
-            if hasattr(request.user, 'student'):
-                request.user.student.fcm_token = token
-                request.user.student.save()
-            elif hasattr(request.user, 'lecturer'):
-                request.user.lecturer.fcm_token = token
-                request.user.lecturer.save()
-            return JsonResponse({'status': 'success'})
-    except Exception as e:
-        pass
-    return JsonResponse({'status': 'error'}, status=400)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'status': 'error', 'detail': 'Invalid JSON body.'}, status=400)
+
+    token = data.get('token', '')
+
+    # Basic format validation
+    if not token or not isinstance(token, str):
+        return JsonResponse({'status': 'error', 'detail': 'Token is required.'}, status=400)
+
+    token = token.strip()
+
+    # FCM tokens are alphanumeric + dashes/underscores/colons, max ~4096 chars
+    if len(token) > 4096:
+        return JsonResponse({'status': 'error', 'detail': 'Token too long.'}, status=400)
+
+    if not re.match(r'^[A-Za-z0-9_:.\-]+$', token):
+        return JsonResponse({'status': 'error', 'detail': 'Invalid token format.'}, status=400)
+
+    try:
+        if hasattr(request.user, 'student'):
+            request.user.student.fcm_token = token
+            request.user.student.save(update_fields=['fcm_token'])
+        elif hasattr(request.user, 'lecturer'):
+            request.user.lecturer.fcm_token = token
+            request.user.lecturer.save(update_fields=['fcm_token'])
+        else:
+            return JsonResponse({'status': 'error', 'detail': 'No profile found.'}, status=400)
+        return JsonResponse({'status': 'success'})
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("save_fcm_token failed for user %s: %s", request.user.pk, exc)
+        return JsonResponse({'status': 'error', 'detail': 'Server error.'}, status=500)
+
 
