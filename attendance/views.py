@@ -585,7 +585,7 @@ class SubmitLocationView(generics.GenericAPIView):
         
         return api_error(
             f'Location is out of range. Distance: {distance_meters:.2f}m '
-            f'(Max 800m)', 
+            f'(Max 3000m)', 
             APIErrorCode.LOCATION_OUT_OF_RANGE, 
             status.HTTP_400_BAD_REQUEST
         )

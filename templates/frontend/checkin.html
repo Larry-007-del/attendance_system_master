@@ -232,11 +232,11 @@
                           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                           const distance = R * c;
                           
-                            L.circle([lLat, lLng], {color: 'green', fillColor: '#10b981', fillOpacity: 0.1, radius: 800}).addTo(map);
+                            L.circle([lLat, lLng], {color: 'green', fillColor: '#10b981', fillOpacity: 0.1, radius: 3000}).addTo(map);
                             L.marker([lLat, lLng]).addTo(map).bindPopup('Lecturer').openPopup();
                             
                             const distMsg = Math.round(distance) + 'm';
-                            if (distance <= 800) {
+                            if (distance <= 3000) {
                               updateStatus(`Session Ready. Distance: ${distMsg} (Valid)`, false, false);
                           } else {
                               updateStatus(`Session Ready. Distance: ${distMsg} (Too Far!)`, true, true);
