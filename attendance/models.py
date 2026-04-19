@@ -146,7 +146,7 @@ class AttendanceStudent(models.Model):
             models.Index(fields=['marked_at']),
         ]
     
-    def is_within_valid_perimeter(self, radius_meters=3000):
+    def is_within_valid_perimeter(self, radius_meters=50):
         """Check if student's location is within valid radius of lecturer's location"""
         if self.latitude is None or self.longitude is None or \
            self.attendance.lecturer_latitude is None or self.attendance.lecturer_longitude is None:
@@ -216,7 +216,7 @@ class Attendance(models.Model):
         time_limit = self.created_at + timedelta(hours=self.duration_hours)
         return timezone.now() < time_limit
 
-    def is_within_radius(self, student_lat, student_lon, radius_meters=3000):
+    def is_within_radius(self, student_lat, student_lon, radius_meters=50):
         """Check if student is within radius of lecturer's location"""
         if not self.lecturer_latitude or not self.lecturer_longitude:
             return False  # Deny attendance when lecturer location is not set
