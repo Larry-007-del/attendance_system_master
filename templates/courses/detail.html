@@ -19,7 +19,16 @@
       <h1 class="text-2xl font-bold text-gray-900">{{ course.name }}</h1>
       <p class="text-gray-600">{{ course.course_code }}</p>
     </div>
-    <div class="mt-4 flex gap-2 md:mt-0">
+    <div class="mt-4 flex flex-wrap gap-2 md:mt-0">
+      <a
+        href="{% url 'course_calendar' course.id %}"
+        class="inline-flex items-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 transition-all hover:-translate-y-0.5 hover:from-purple-700 hover:to-indigo-700 active:scale-95"
+      >
+        <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        Export Calendar
+      </a>
       {% if user.is_superuser or course.lecturer.user == user %}
       <a
         href="{% url 'frontend:course_edit' course.id %}"

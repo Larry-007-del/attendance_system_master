@@ -76,14 +76,8 @@
             {% csrf_token %}
             
             <!-- Username/Email Field -->
-            <div>
-              <label
-                for="id_username"
-                class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >
-                Username or Email
-              </label>
-              <div class="relative mt-2">
+            <div x-data="{ focused: false, hasValue: document.getElementById('id_username')?.value.length > 0 }" x-init="$watch('hasValue', val => {}); setTimeout(()=> hasValue = document.getElementById('id_username')?.value.length > 0, 100)" class="relative pt-2 hover:drop-shadow-sm transition-all focus-within:z-10">
+              <div class="relative mt-2" @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <svg
                     class="h-5 w-5 text-gray-400"
@@ -106,6 +100,13 @@
                   </div>
                 {% endif %}
               </div>
+              <label
+                for="id_username"
+                class="absolute left-10 top-5 z-10 origin-left pointer-events-none px-1 transition-all duration-200"
+                :class="(focused || hasValue) ? '-translate-y-[1.6rem] -translate-x-[2.2rem] scale-[0.85] font-bold text-brand-600 bg-gradient-to-b from-transparent via-white/90 to-white/90 dark:via-gray-800/90 dark:to-gray-800/90 rounded' : 'text-sm font-semibold text-gray-500'"
+              >
+                Username or Email
+              </label>
               {% if form.username.errors %}
                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">
                   {{ form.username.errors.0 }}
@@ -114,22 +115,16 @@
             </div>
 
             <!-- Password Field -->
-            <div>
-              <div class="flex items-center justify-between">
-                <label
-                  for="id_password"
-                  class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                >
-                  Password
-                </label>
+            <div x-data="{ focused: false, hasValue: document.getElementById('id_password')?.value.length > 0 }" x-init="$watch('hasValue', val => {}); setTimeout(()=> hasValue = document.getElementById('id_password')?.value.length > 0, 100)" class="relative pt-2 hover:drop-shadow-sm transition-all focus-within:z-10">
+              <div class="absolute right-0 top-0 z-20">
                 <a
                   href="{% url 'frontend:password_reset' %}"
-                  class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                  class="text-[13px] font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 bg-white/50 backdrop-blur-sm rounded-lg px-2"
                 >
                   Forgot?
                 </a>
               </div>
-              <div class="relative mt-2">
+              <div class="relative mt-2" @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <svg
                     class="h-5 w-5 text-gray-400"
@@ -156,6 +151,13 @@
                   </div>
                 {% endif %}
               </div>
+              <label
+                for="id_password"
+                class="absolute left-10 top-5 z-10 origin-left pointer-events-none px-1 transition-all duration-200"
+                :class="(focused || hasValue) ? '-translate-y-[1.6rem] -translate-x-[2.2rem] scale-[0.85] font-bold text-brand-600 bg-gradient-to-b from-transparent via-white/90 to-white/90 dark:via-gray-800/90 dark:to-gray-800/90 rounded' : 'text-sm font-semibold text-gray-500'"
+              >
+                Password
+              </label>
               {% if form.password.errors %}
                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">
                   {{ form.password.errors.0 }}

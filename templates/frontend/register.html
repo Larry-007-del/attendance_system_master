@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 {% load static %}
 <html lang="en">
   <head>
@@ -72,11 +72,8 @@
             {% csrf_token %}
 
             <!-- Username -->
-            <div>
-              <label for="username" class="block text-sm font-semibold text-white">
-                Username
-              </label>
-              <div class="relative mt-2">
+            <div x-data="{ focused: false, hasValue: document.getElementById('username')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('username')?.value.length > 0, 100)" class="relative pt-2 hover:drop-shadow-sm transition-all focus-within:z-10">
+              <div class="relative mt-2" @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
@@ -92,17 +89,17 @@
                   class="block w-full rounded-[1rem] border border-white/20 bg-white/10 pl-10 pr-4 py-3 text-white placeholder-indigo-200/70 transition-all focus:border-white focus:bg-white/20 focus:ring-0 sm:text-sm"
                 />
               </div>
+              <label for="username" class="absolute left-10 top-5 z-10 origin-left pointer-events-none px-1 transition-all duration-200" :class="(focused || hasValue) ? '-translate-y-[1.6rem] -translate-x-[2.2rem] scale-[0.85] font-bold text-white bg-black/30 backdrop-blur-md rounded' : 'text-sm font-semibold text-white'">
+                Username
+              </label>
               <p class="mt-1 text-xs text-indigo-200/80">
                 Letters, numbers, underscores only
               </p>
             </div>
 
             <!-- Email -->
-            <div>
-              <label for="email" class="block text-sm font-semibold text-white">
-                Email Address
-              </label>
-              <div class="relative mt-2">
+            <div x-data="{ focused: false, hasValue: document.getElementById('email')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('email')?.value.length > 0, 100)" class="relative pt-2 hover:drop-shadow-sm transition-all focus-within:z-10">
+              <div class="relative mt-2" @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
@@ -119,14 +116,14 @@
                   class="block w-full rounded-[1rem] border border-white/20 bg-white/10 pl-10 pr-4 py-3 text-white placeholder-indigo-200/70 transition-all focus:border-white focus:bg-white/20 focus:ring-0 sm:text-sm"
                 />
               </div>
+              <label for="email" class="absolute left-10 top-5 z-10 origin-left pointer-events-none px-1 transition-all duration-200" :class="(focused || hasValue) ? '-translate-y-[1.6rem] -translate-x-[2.2rem] scale-[0.85] font-bold text-white bg-black/30 backdrop-blur-md rounded' : 'text-sm font-semibold text-white'">
+                Email Address
+              </label>
             </div>
 
             <!-- Password -->
-            <div x-data="{ show: false }">
-              <label for="password1" class="block text-sm font-semibold text-white">
-                Password
-              </label>
-              <div class="relative mt-2">
+            <div x-data="{ show: false, focused: false, hasValue: document.getElementById('password1')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('password1')?.value.length > 0, 100)" class="relative pt-2 hover:drop-shadow-sm transition-all focus-within:z-10">
+              <div class="relative mt-2" @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
@@ -150,17 +147,17 @@
                   <span x-text="show ? 'Hide' : 'Show'"></span>
                 </button>
               </div>
+              <label for="password1" class="absolute left-10 top-5 z-10 origin-left pointer-events-none px-1 transition-all duration-200" :class="(focused || hasValue) ? '-translate-y-[1.6rem] -translate-x-[2.2rem] scale-[0.85] font-bold text-white bg-black/30 backdrop-blur-md rounded' : 'text-sm font-semibold text-white'">
+                Password
+              </label>
               <p class="mt-1 text-xs text-indigo-200/80">
                 Minimum 8 characters
               </p>
             </div>
 
             <!-- Confirm Password -->
-            <div x-data="{ show: false }">
-              <label for="password2" class="block text-sm font-semibold text-white">
-                Confirm Password
-              </label>
-              <div class="relative mt-2">
+            <div x-data="{ show: false, focused: false, hasValue: document.getElementById('password2')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('password2')?.value.length > 0, 100)" class="relative pt-2 hover:drop-shadow-sm transition-all focus-within:z-10">
+              <div class="relative mt-2" @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
@@ -184,6 +181,9 @@
                   <span x-text="show ? 'Hide' : 'Show'"></span>
                 </button>
               </div>
+              <label for="password2" class="absolute left-10 top-5 z-10 origin-left pointer-events-none px-1 transition-all duration-200" :class="(focused || hasValue) ? '-translate-y-[1.6rem] -translate-x-[2.2rem] scale-[0.85] font-bold text-white bg-black/30 backdrop-blur-md rounded' : 'text-sm font-semibold text-white'">
+                Confirm Password
+              </label>
             </div>
 
             <!-- Info Note -->
