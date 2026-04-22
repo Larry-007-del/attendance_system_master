@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 {% load static %}
 <html lang="en">
   <head>
@@ -49,38 +49,62 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next }}" />
 
-            <div>
-              <label for="username" class="mb-2 block text-sm font-medium text-white">Your Username</label>
+            <div x-data="{ focused: false, hasValue: document.getElementById('username')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('username')?.value.length > 0, 100)" class="relative focus-within:z-10">
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                </svg>
+              </div>
               <input
                 type="text"
                 name="username"
                 id="username"
                 autocomplete="username"
-                class="block w-full rounded-[1rem] border border-white/20 bg-white/10 p-3 text-white placeholder-indigo-200/70 focus:border-white focus:bg-white/20 focus:ring-0 transition-all sm:text-sm"
+                @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0"
+                class="block w-full rounded-[1rem] border border-white/20 bg-white/10 pl-10 pr-4 pt-6 pb-2 text-white placeholder-transparent focus:border-white focus:bg-white/20 focus:ring-0 transition-all sm:text-sm"
                 placeholder="Student ID or Username"
                 required=""
               />
+              <label
+                for="username"
+                class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70"
+                :class="(focused || hasValue) ? 'top-[4px] text-[10px] uppercase tracking-wider font-bold text-white' : 'top-1/2 -translate-y-1/2 text-sm font-medium'"
+              >
+                Your Username
+              </label>
             </div>
 
-            <div x-data="{ show: false }">
-              <label for="password" class="mb-2 block text-sm font-medium text-white">Password</label>
-              <div class="relative">
+            <div x-data="{ show: false, focused: false, hasValue: document.getElementById('password')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('password')?.value.length > 0, 100)">
+              <div class="relative focus-within:z-10">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
                 <input
                   :type="show ? 'text' : 'password'"
                   name="password"
                   id="password"
                   autocomplete="current-password"
+                  @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0"
+                  class="block w-full rounded-[1rem] border border-white/20 bg-white/10 pl-10 pr-16 pt-6 pb-2 text-white placeholder-transparent focus:border-white focus:bg-white/20 focus:ring-0 transition-all sm:text-sm"
                   placeholder="ÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇóÔÇó"
-                  class="block w-full rounded-[1rem] border border-white/20 bg-white/10 p-3 pr-16 text-white placeholder-indigo-200/70 focus:border-white focus:bg-white/20 focus:ring-0 transition-all sm:text-sm"
                   required=""
                 />
                 <button
                   type="button"
                   @click="show = !show"
-                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-sm text-indigo-200 hover:text-white transition-colors"
+                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-medium text-indigo-200 hover:text-white transition-colors cursor-pointer"
                 >
                   <span x-text="show ? 'Hide' : 'Show'"></span>
                 </button>
+                <label
+                  for="password"
+                  class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70"
+                  :class="(focused || hasValue) ? 'top-[4px] text-[10px] uppercase tracking-wider font-bold text-white' : 'top-1/2 -translate-y-1/2 text-sm font-medium'"
+                >
+                  Password
+                </label>
               </div>
             </div>
 

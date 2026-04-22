@@ -32,8 +32,8 @@
         </div>
         <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg transition-transform hover:-translate-y-0.5 hover:shadow-lg hover:bg-indigo-700">Filter</button>
         <a href="{% url 'frontend:attendance_history' %}" class="px-6 py-2 border border-gray-300 bg-white/50 rounded-lg transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700">Clear</a>
-        <button type="submit" name="export_csv" value="true" class="ml-auto flex items-center px-6 py-2 bg-green-600 text-white rounded-lg transition-transform hover:-translate-y-0.5 hover:shadow-lg hover:bg-green-700">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <button type="submit" name="export_csv" value="true" hx-boost="false" class="ml-auto flex items-center px-6 py-2 bg-green-600 text-white whitespace-nowrap rounded-lg transition-transform hover:-translate-y-0.5 hover:shadow-lg hover:bg-green-700">
+            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
             Export CSV
         </button>
     </form>
