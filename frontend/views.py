@@ -364,7 +364,7 @@ def ajax_dashboard_stats(request):
         }
         cache.set(cache_key, stats, 60)
         
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'partials/admin_stats.html', stats)
     return JsonResponse(stats)
 
@@ -615,7 +615,7 @@ def lecturer_list(request):
         'sort': sort,
     }
     
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'partials/lecturer_list_content.html', context)
     return render(request, 'lecturers/list.html', context)
 
@@ -838,7 +838,7 @@ def student_list(request):
         'programmes': Student.objects.values_list('programme_of_study', flat=True).distinct(),
     }
     
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'partials/student_list_content.html', context)
     return render(request, 'students/list.html', context)
 
@@ -1037,12 +1037,12 @@ def student_delete(request, pk):
         user = student.user
         student.delete()
         user.delete()
-        if request.headers.get('HX-Request'):
+        if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
             return HttpResponse('')  # Return empty response for HTMX to remove row
         messages.success(request, 'Student deleted successfully!')
         return redirect('frontend:student_list')
     
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'partials/student_delete_confirm.html', {'student': student})
     
     context = {'student': student}
@@ -1141,7 +1141,7 @@ def course_list(request):
         'sort': sort,
     }
     
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'partials/course_list_content.html', context)
     return render(request, 'courses/list.html', context)
 
@@ -1370,12 +1370,12 @@ def course_delete(request, pk):
     
     if request.method == 'POST':
         course.delete()
-        if request.headers.get('HX-Request'):
+        if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
             return HttpResponse('')  # Return empty response for HTMX to remove row
         messages.success(request, 'Course deleted successfully!')
         return redirect('frontend:course_list')
     
-    if request.headers.get('HX-Request'):
+    if request.headers.get('HX-Request') and not request.headers.get('HX-Boosted'):
         return render(request, 'partials/course_delete_confirm.html', {'course': course})
 
     context = {'course': course}
