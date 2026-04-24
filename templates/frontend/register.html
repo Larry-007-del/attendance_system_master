@@ -22,6 +22,20 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
     <script src="{% static 'js/htmx.min.js' %}"></script>
     <script defer src="{% static 'js/alpine.min.js' %}"></script>
+  
+    <!-- Dark mode sync -->
+    <script>
+      (function () {
+        var html = document.documentElement;
+        var stored = localStorage.getItem('exodus-theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'dark' || (!stored && prefersDark)) {
+          html.classList.add('dark');
+        } else {
+          html.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
   <body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-600 via-indigo-900 to-purple-900 dark:from-gray-900 dark:via-gray-900 dark:to-black selection:bg-brand-500 selection:text-white overflow-y-auto relative">
     
@@ -32,7 +46,7 @@
     </div>
     <div class="flex flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8 w-full max-w-md z-10 animate-fade-in-up mt-8 mb-8">
       <!-- Register Card -->
-      <div class="w-full rounded-[2.5rem] border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl p-8 sm:p-10">
+      <div class="w-full rounded-[2.5rem] border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl p-6 sm:p-10">
         <div class="text-center mb-8">
           <div class="mx-auto mb-4 inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-lg shadow-brand-500/50">
             <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +101,7 @@
                 @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0"
                 class="block w-full rounded-xl border border-white/20 bg-white/10 pl-10 pr-4 py-3.5 text-white placeholder-transparent transition-all focus:border-white focus:bg-white/20 focus:ring-0 sm:text-sm"
               />
-              <label for="username" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 -translate-x-4 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
+              <label for="username" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
                 Username
               </label>
               <p class="mt-1 text-xs text-indigo-200/80">
@@ -112,7 +126,7 @@
                 @focusin="focused = true" @focusout="focused = false" @input="hasValue = $event.target.value.length > 0"
                 class="block w-full rounded-xl border border-white/20 bg-white/10 pl-10 pr-4 py-3.5 text-white placeholder-transparent transition-all focus:border-white focus:bg-white/20 focus:ring-0 sm:text-sm"
               />
-              <label for="email" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 -translate-x-4 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
+              <label for="email" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
                 Email Address
               </label>
             </div>
@@ -141,7 +155,7 @@
               >
                 <span x-text="show ? 'Hide' : 'Show'"></span>
               </button>
-              <label for="password1" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 -translate-x-4 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
+              <label for="password1" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
                 Password
               </label>
               <p class="mt-1 text-xs text-indigo-200/80">
@@ -173,7 +187,7 @@
               >
                 <span x-text="show ? 'Hide' : 'Show'"></span>
               </button>
-              <label for="password2" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 -translate-x-4 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
+              <label for="password2" class="absolute left-10 pointer-events-none transition-all duration-200 text-indigo-200/70" :class="(focused || hasValue) ? '-translate-y-8 bg-transparent text-xs uppercase tracking-wider font-bold text-white shadow-none border-none outline-none' : 'top-1/2 -translate-y-1/2 text-sm font-medium'">
                 Confirm Password
               </label>
             </div>
