@@ -22,22 +22,9 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
     <script src="{% static 'js/htmx.min.js' %}"></script>
     <script defer src="{% static 'js/alpine.min.js' %}"></script>
-  
-    <!-- Dark mode sync -->
-    <script>
-      (function () {
-        var html = document.documentElement;
-        var stored = localStorage.getItem('exodus-theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (stored === 'dark' || (!stored && prefersDark)) {
-          html.classList.add('dark');
-        } else {
-          html.classList.remove('dark');
-        }
-      })();
-    </script>
+    <!-- Auth pages always use dark theme — no sync needed -->
   </head>
-  <body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-600 via-indigo-900 to-purple-900 dark:from-gray-900 dark:via-gray-900 dark:to-black selection:bg-brand-500 selection:text-white overflow-y-auto relative">
+  <body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-600 via-indigo-900 to-purple-900 selection:bg-brand-500 selection:text-white overflow-y-auto relative">
     
     <!-- Animated background blooms -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
