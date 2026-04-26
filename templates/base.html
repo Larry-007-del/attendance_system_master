@@ -132,7 +132,7 @@
                     {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
                   </span>
                 </a>
-                <form action="{% url 'frontend:logout' %}" method="post">
+                <form action="{% url 'frontend:logout' %}" method="post" hx-boost="false">
                   {% csrf_token %}
                   <button
                     type="submit"
