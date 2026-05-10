@@ -180,7 +180,7 @@ class CheckinViewTest(FrontendViewsTestCase):
         response = self.client.get(reverse('frontend:checkin'))
         self.assertRedirects(response, reverse('frontend:login') + '?next=/attendance/checkin/')
 
-    def test_checkin_view_preserves_qr_button_label_span_for_state_updates(self):
+    def test_checkin_view_has_qr_button_label_span(self):
         self.client.login(username='teststudent', password='testpassword123')
         response = self.client.get(reverse('frontend:checkin'))
         self.assertContains(response, 'id="scan-qr-label"')
