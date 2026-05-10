@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from attendance.models import (
     Attendance,
+    AttendanceToken,
     AttendanceStudent,
     Course,
     CourseEnrollment,
@@ -675,6 +676,55 @@ class AttendanceViewsTest(FrontendViewsTestCase):
         response = self.client.get(reverse('frontend:attendance_take'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'attendance/take.html')
+
+    def test_attendance_take_shows_matching_token_for_active_course(self):
+        other_course = Course.objects.create(
+            name='Advanced Programming',
+            course_code='CS102',
+            lecturer=self.lecturer,
+        )
+        Attendance.objects.create(
+            course=self.course,
+            date=timezone.localdate(),
+            is_active=True,
+        )
+        AttendanceToken.objects.create(
+            course=other_course,
+            token='ZXCVBN',
+            is_active=True,
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+        expected_token = AttendanceToken.objects.create(
+            course=self.course,
+            token='QWERTY',
+            is_active=True,
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        self.client.login(username='testlecturer', password='testpassword123')
+        response = self.client.get(reverse('frontend:attendance_take'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.context['active_session'])
+        self.assertEqual(response.context['active_session'].pk, expected_token.pk)
+
+    def test_attendance_take_admin_can_view_active_session_after_refresh(self):
+        Attendance.objects.create(
+            course=self.course,
+            date=timezone.localdate(),
+            is_active=True,
+        )
+        AttendanceToken.objects.create(
+            course=self.course,
+            token='ASDFGH',
+            is_active=True,
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        self.client.login(username='testadmin', password='testpassword123')
+        response = self.client.get(reverse('frontend:attendance_take'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.context['active_session'])
+        self.assertEqual(response.context['active_session'].course, self.course)
 
     def test_attendance_detail_view(self):
         attendance = Attendance.objects.create(
@@ -1906,4 +1956,3 @@ class DeleteViewAdminRequiredTest(FrontendViewsTestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Student.objects.filter(pk=self.student.pk).exists())
-

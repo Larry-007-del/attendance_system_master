@@ -1457,21 +1457,23 @@ def attendance_take(request):
     """Take attendance - generate token (lecturer/admin only)"""
     # Get active attendance session if it exists
     active_session = None
+    active_attendance = None
+    active_attendances = Attendance.objects.filter(
+        date=timezone.localdate(),
+        is_active=True,
+    ).select_related('course')
     try:
         lecturer = Lecturer.objects.get(user=request.user)
-        active_attendance = Attendance.objects.filter(
-            course__lecturer=lecturer,
-            date=timezone.localdate(),
-            is_active=True
-        ).first()
-        
-        if active_attendance:
-            active_session = AttendanceToken.objects.filter(
-                course__lecturer=lecturer,
-                is_active=True
-            ).first()
+        active_attendance = active_attendances.filter(course__lecturer=lecturer).first()
     except Lecturer.DoesNotExist:
-        pass
+        if request.user.is_superuser:
+            active_attendance = active_attendances.first()
+
+    if active_attendance:
+        active_session = AttendanceToken.objects.filter(
+            course=active_attendance.course,
+            is_active=True
+        ).order_by('-generated_at').first()
     
     if request.method == 'POST' and not active_session:
         course_id = request.POST.get('course')
@@ -2564,5 +2566,4 @@ def save_fcm_token(request):
         import logging
         logging.getLogger(__name__).error("save_fcm_token failed for user %s: %s", request.user.pk, exc)
         return JsonResponse({'status': 'error', 'detail': 'Server error.'}, status=500)
-
 
