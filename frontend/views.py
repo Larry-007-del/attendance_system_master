@@ -1442,33 +1442,37 @@ def _close_expired_attendance_sessions(course=None):
     Close expired active attendance sessions and deactivate their active tokens.
 
     A session is expired when now >= created_at + duration_hours.
+    When course is provided, only sessions for that course are checked.
     """
     now = timezone.now()
     active_sessions = Attendance.objects.filter(is_active=True).select_related('course')
     if course is not None:
         active_sessions = active_sessions.filter(course=course)
 
-    expired_sessions = []
+    closed_count = 0
+    affected_course_ids = set()
     for session in active_sessions:
         expires_at = session.created_at + timedelta(hours=session.duration_hours)
         if now >= expires_at:
-            expired_sessions.append(session)
+            session.is_active = False
+            session.ended_at = now
+            session.save(update_fields=['is_active', 'ended_at', 'updated_at'])
+            AttendanceToken.objects.filter(course=session.course, is_active=True).update(is_active=False)
+            affected_course_ids.add(session.course_id)
+            closed_count += 1
 
-    for session in expired_sessions:
-        session.is_active = False
-        session.ended_at = now
-        session.save(update_fields=['is_active', 'ended_at', 'updated_at'])
+    if affected_course_ids:
+        courses_with_active_sessions = set(
+            Attendance.objects.filter(
+                course_id__in=affected_course_ids,
+                is_active=True,
+            ).values_list('course_id', flat=True)
+        )
+        courses_to_deactivate = affected_course_ids - courses_with_active_sessions
+        if courses_to_deactivate:
+            Course.objects.filter(id__in=courses_to_deactivate).update(is_active=False)
 
-        AttendanceToken.objects.filter(
-            course=session.course,
-            is_active=True,
-        ).update(is_active=False)
-
-        if not Attendance.objects.filter(course=session.course, is_active=True).exists():
-            session.course.is_active = False
-            session.course.save(update_fields=['is_active'])
-
-    return len(expired_sessions)
+    return closed_count
 
 
 @staff_required
