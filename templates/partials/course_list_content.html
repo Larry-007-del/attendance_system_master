@@ -30,7 +30,7 @@
       <div class="mt-4 flex gap-2">
         <a href="{% url 'frontend:course_detail' course.id %}" class="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-center text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">View</a>
         <a href="{% url 'frontend:course_edit' course.id %}" class="flex-1 rounded-xl bg-blue-50 px-4 py-2.5 text-center text-sm font-semibold text-blue-700 shadow-sm transition-all hover:bg-blue-100 dark:bg-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-800">Edit</a>
-        <button hx-delete="{% url 'frontend:course_delete' course.id %}" hx-confirm="Are you sure you want to delete {{ course.course_code }}?" hx-target="#course-card-{{ course.id }}" hx-swap="outerHTML swap:1s" class="flex-1 rounded-xl bg-red-50 px-4 py-2.5 text-center text-sm font-semibold text-red-700 shadow-sm transition-all hover:bg-red-100 focus:outline-none dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800">
+        <button hx-post="{% url 'frontend:course_delete' course.id %}" hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}' hx-confirm="Are you sure you want to delete {{ course.course_code }}?" hx-target="#course-card-{{ course.id }}" hx-swap="outerHTML swap:1s" class="flex-1 rounded-xl bg-red-50 px-4 py-2.5 text-center text-sm font-semibold text-red-700 shadow-sm transition-all hover:bg-red-100 focus:outline-none dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800">
           Delete
         </button>
       </div>

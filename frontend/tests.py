@@ -726,6 +726,43 @@ class AttendanceViewsTest(FrontendViewsTestCase):
         self.assertIsNotNone(response.context['active_session'])
         self.assertEqual(response.context['active_session'].course, self.course)
 
+    def test_attendance_take_post_closes_expired_session_before_starting_new_one(self):
+        expired_attendance = Attendance.objects.create(
+            course=self.course,
+            date=timezone.localdate(),
+            is_active=True,
+            duration_hours=1,
+        )
+        Attendance.objects.filter(pk=expired_attendance.pk).update(
+            created_at=timezone.now() - timedelta(hours=3)
+        )
+        expired_token = AttendanceToken.objects.create(
+            course=self.course,
+            token='OLD123',
+            is_active=True,
+            expires_at=timezone.now() - timedelta(minutes=5),
+        )
+
+        self.client.login(username='testlecturer', password='testpassword123')
+        response = self.client.post(
+            reverse('frontend:attendance_take'),
+            {
+                'course': self.course.pk,
+                'token': 'NEW123',
+                'duration_hours': 2,
+                'radius_meters': 50,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        expired_attendance.refresh_from_db()
+        expired_token.refresh_from_db()
+        self.assertFalse(expired_attendance.is_active)
+        self.assertIsNotNone(expired_attendance.ended_at)
+        self.assertFalse(expired_token.is_active)
+        self.assertTrue(Attendance.objects.filter(course=self.course, is_active=True).exclude(pk=expired_attendance.pk).exists())
+        self.assertTrue(AttendanceToken.objects.filter(course=self.course, token='NEW123', is_active=True).exists())
+
     def test_attendance_detail_view(self):
         attendance = Attendance.objects.create(
             course=self.course,
