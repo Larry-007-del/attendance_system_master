@@ -1462,7 +1462,6 @@ def attendance_take(request):
         date=timezone.localdate(),
         is_active=True,
     ).select_related('course')
-    lecturer = None
     if request.user.is_superuser:
         active_attendance = active_attendances.first()
     else:
