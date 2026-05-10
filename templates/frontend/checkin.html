@@ -31,7 +31,7 @@
           d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
         ></path>
       </svg>
-      Scan QR Code
+      <span id="scan-qr-label">Scan QR Code</span>
     </button>
 
     <div id="qr-scanner" class="mb-4 hidden">
@@ -134,6 +134,7 @@
   
   // Elements
   const scanQrBtn = document.getElementById('scan-qr-btn');
+  const scanQrBtnLabel = document.getElementById('scan-qr-label');
   const qrScanner = document.getElementById('qr-scanner');
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
@@ -150,7 +151,9 @@
   function stopScanner(message = 'Scan QR Code') {
     scanning = false;
     qrScanner.classList.add('hidden');
-    scanQrBtn.textContent = message;
+    if (scanQrBtnLabel) {
+      scanQrBtnLabel.textContent = message;
+    }
     if (scannerInterval) {
       clearInterval(scannerInterval);
       scannerInterval = null;
@@ -171,7 +174,9 @@
       }
 
       qrScanner.classList.remove('hidden');
-      scanQrBtn.textContent = 'Starting Camera...';
+      if (scanQrBtnLabel) {
+        scanQrBtnLabel.textContent = 'Starting Camera...';
+      }
 
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: 'environment' } })
@@ -182,7 +187,9 @@
           return video.play();
         })
         .then(() => {
-          scanQrBtn.textContent = 'Stop Scanning';
+          if (scanQrBtnLabel) {
+            scanQrBtnLabel.textContent = 'Stop Scanning';
+          }
           scanning = true;
 
           currentStream.getTracks().forEach((track) => {
