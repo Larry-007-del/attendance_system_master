@@ -707,6 +707,54 @@ class SubmitLocationAPITest(APIAuthTestCase):
         self.assertEqual(response.data['code'], 'location_out_of_range')
         self.assertIn('error', response.data)
 
+    @override_settings(DEFAULT_FILE_STORAGE='django.core.files.storage.InMemoryStorage')
+    def test_submit_location_prefers_today_attendance(self):
+        self.auth_as_user(self.stu_user)
+        older_attendance = Attendance.objects.create(
+            course=self.course,
+            date=timezone.localdate() - timedelta(days=1),
+            lecturer_latitude=Decimal('0.000000'),
+            lecturer_longitude=Decimal('0.000000'),
+            is_active=True,
+        )
+        AttendanceToken.objects.create(
+            course=self.course, token='TODAY01', is_active=True
+        )
+        response = self.client.post(
+            '/api/submit-location/',
+            {'latitude': '5.650010', 'longitude': '-0.187010', 'attendance_token': 'TODAY01'},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            AttendanceStudent.objects.filter(
+                attendance=self.attendance, student=self.student
+            ).exists()
+        )
+        self.assertFalse(
+            AttendanceStudent.objects.filter(
+                attendance=older_attendance, student=self.student
+            ).exists()
+        )
+
+    @override_settings(DEFAULT_FILE_STORAGE='django.core.files.storage.InMemoryStorage')
+    def test_submit_location_falls_back_to_latest_active_attendance(self):
+        self.auth_as_user(self.stu_user)
+        self.attendance.date = timezone.localdate() - timedelta(days=1)
+        self.attendance.save(update_fields=['date'])
+        AttendanceToken.objects.create(
+            course=self.course, token='FALL01', is_active=True
+        )
+        response = self.client.post(
+            '/api/submit-location/',
+            {'latitude': '5.650010', 'longitude': '-0.187010', 'attendance_token': 'FALL01'},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            AttendanceStudent.objects.filter(
+                attendance=self.attendance, student=self.student
+            ).exists()
+        )
+
     def test_submit_location_invalid_token(self):
         self.auth_as_user(self.stu_user)
         response = self.client.post(
