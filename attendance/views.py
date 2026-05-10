@@ -556,8 +556,13 @@ class SubmitLocationView(generics.GenericAPIView):
         except AttendanceToken.DoesNotExist:
             return api_error('Invalid or expired token', APIErrorCode.INVALID_OR_EXPIRED_TOKEN, status.HTTP_400_BAD_REQUEST)
 
+        def deactivate_token():
+            if token.is_active:
+                AttendanceToken.objects.filter(pk=token.pk, is_active=True).update(is_active=False)
+                token.is_active = False
+
         if token.expires_at and token.expires_at <= timezone.now():
-            AttendanceToken.objects.filter(pk=token.pk, is_active=True).update(is_active=False)
+            deactivate_token()
             return api_error('Invalid or expired token', APIErrorCode.INVALID_OR_EXPIRED_TOKEN, status.HTTP_400_BAD_REQUEST)
 
         attendance_queryset = Attendance.objects.filter(course=token.course, is_active=True)
@@ -574,7 +579,7 @@ class SubmitLocationView(generics.GenericAPIView):
         )
 
         if not attendance or not attendance.is_session_valid:
-            AttendanceToken.objects.filter(pk=token.pk, is_active=True).update(is_active=False)
+            deactivate_token()
             return api_error('This attendance session has expired.', APIErrorCode.SESSION_EXPIRED, status.HTTP_400_BAD_REQUEST)
 
         if attendance.is_within_radius(lat_float, lon_float):
