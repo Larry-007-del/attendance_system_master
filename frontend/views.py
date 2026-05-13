@@ -256,7 +256,9 @@ def dashboard(request):
 
                 # Compute real attendance rate
                 total_sessions = Attendance.objects.filter(course__students=student).distinct().count()
-                attended_sessions = Attendance.objects.filter(present_students=student).distinct().count()
+                attended_sessions = AttendanceStudent.objects.filter(
+                    student=student
+                ).values('attendance').distinct().count()
                 if total_sessions > 0:
                     context['attendance_rate'] = round((attended_sessions / total_sessions) * 100)
                 else:
@@ -331,7 +333,9 @@ def profile_view(request):
     stats = {}
     if profile_type == 'student':
         total = Attendance.objects.filter(course__students=profile).distinct().count()
-        attended = Attendance.objects.filter(present_students=profile).distinct().count()
+        attended = AttendanceStudent.objects.filter(
+            student=profile
+        ).values('attendance').distinct().count()
         stats['total_sessions'] = total
         stats['attended_sessions'] = attended
         stats['attendance_rate'] = round((attended / total) * 100) if total > 0 else 0
@@ -544,13 +548,13 @@ def chart_student_history(request):
     today = timezone.localdate()
     start_date = today - timedelta(days=29)
     
-    records = Attendance.objects.filter(
-        present_students=student,
-        date__gte=start_date,
-        date__lte=today
-    ).values('date').annotate(
-        sessions=Count('id')
-    ).order_by('date')
+    records = AttendanceStudent.objects.filter(
+        student=student,
+        attendance__date__gte=start_date,
+        attendance__date__lte=today
+    ).values('attendance__date').annotate(
+        sessions=Count('attendance', distinct=True)
+    ).order_by('attendance__date')
     
     # We will aggregate by week to keep it clean, or just plot individual days that had attendance
     date_list = [(start_date + timedelta(days=i)) for i in range(30)]
@@ -558,8 +562,8 @@ def chart_student_history(request):
     data = [0] * 30
     
     for r in records:
-        if r['date'] in date_list:
-            idx = date_list.index(r['date'])
+        if r['attendance__date'] in date_list:
+            idx = date_list.index(r['attendance__date'])
             data[idx] = r['sessions']
             
     # Filter out empty past dates at start to make chart nicer (optional)
@@ -594,7 +598,10 @@ def chart_student_course_breakdown(request):
         
         # Get count of total distinct sessions for this course
         total_sessions = Attendance.objects.filter(course=course).count()
-        attended_sessions = Attendance.objects.filter(course=course, present_students=student).count()
+        attended_sessions = AttendanceStudent.objects.filter(
+            student=student,
+            attendance__course=course
+        ).count()
         
         attended_data.append(attended_sessions)
         missed_data.append(max(0, total_sessions - attended_sessions))
@@ -1989,11 +1996,13 @@ def attendance_history(request):
     
     # Base query - restrict based on user role
     if request.user.is_superuser:
-        attendances = Attendance.objects.all().select_related('course').prefetch_related('present_students')
+        attendances = Attendance.objects.all().select_related('course')
     elif hasattr(request.user, 'lecturer'):
-        attendances = Attendance.objects.filter(course__lecturer=request.user.lecturer).select_related('course').prefetch_related('present_students')
+        attendances = Attendance.objects.filter(course__lecturer=request.user.lecturer).select_related('course')
     elif hasattr(request.user, 'student'):
-        attendances = Attendance.objects.filter(present_students=request.user.student).select_related('course').prefetch_related('present_students')
+        attendances = Attendance.objects.filter(
+            attendancestudent__student=request.user.student
+        ).select_related('course').distinct()
     else:
         attendances = Attendance.objects.none()
     
@@ -2003,6 +2012,10 @@ def attendance_history(request):
         attendances = attendances.filter(date__gte=date_from)
     if date_to:
         attendances = attendances.filter(date__lte=date_to)
+
+    attendances = attendances.annotate(
+        present_count=Count('attendancestudent', distinct=True)
+    )
         
     if request.GET.get('export_csv') == 'true':
         import csv
@@ -2016,7 +2029,7 @@ def attendance_history(request):
                 att.course.name,
                 att.course.course_code,
                 att.date,
-                att.present_students.count(),
+                att.present_count,
                 'Active' if att.is_active else 'Ended'
             ])
         return response
