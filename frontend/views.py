@@ -1996,13 +1996,13 @@ def attendance_history(request):
     
     # Base query - restrict based on user role
     if request.user.is_superuser:
-        attendances = Attendance.objects.all().select_related('course').prefetch_related('present_students')
+        attendances = Attendance.objects.all().select_related('course')
     elif hasattr(request.user, 'lecturer'):
-        attendances = Attendance.objects.filter(course__lecturer=request.user.lecturer).select_related('course').prefetch_related('present_students')
+        attendances = Attendance.objects.filter(course__lecturer=request.user.lecturer).select_related('course')
     elif hasattr(request.user, 'student'):
         attendances = Attendance.objects.filter(
             attendancestudent__student=request.user.student
-        ).select_related('course').prefetch_related('present_students').distinct()
+        ).select_related('course').distinct()
     else:
         attendances = Attendance.objects.none()
     
