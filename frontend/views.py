@@ -1360,7 +1360,7 @@ def join_course(request):
     if request.method == 'POST':
         join_code = request.POST.get('join_code', '').strip().upper()
         if not join_code:
-            messages.error(request, "Please enter a valid join code.")
+            messages.error(request, "Please enter the 6-character join code from your lecturer.")
             return redirect('frontend:join_course')
 
         try:
@@ -1384,7 +1384,7 @@ def join_course(request):
             return redirect('frontend:my_courses')
 
         except Course.DoesNotExist:
-            messages.error(request, "Invalid join code. Please try again.")
+            messages.error(request, "We couldn't find a course with that code. Double-check the 6-character join code from your lecturer.")
             return redirect('frontend:join_course')
 
     return render(request, 'courses/join.html')
@@ -1710,7 +1710,7 @@ def attendance_mark(request):
                 return render(request, 'attendance/mark.html')
 
             if not att_token.is_active:
-                messages.error(request, 'This attendance session has been closed by the lecturer.')
+                messages.error(request, 'This attendance session has ended, so check-in is closed. Please contact your lecturer if you expected to check in.')
                 return render(request, 'attendance/mark.html')
 
             course = att_token.course
@@ -1729,7 +1729,7 @@ def attendance_mark(request):
                 ).first()
                 
                 if not attendance:
-                    messages.error(request, 'This attendance session has been closed.')
+                    messages.error(request, 'This attendance session has ended, so check-in is closed. Please contact your lecturer if you expected to check in.')
                     return render(request, 'attendance/mark.html')
                 
                 # Check if 2FA is required
@@ -1854,11 +1854,11 @@ def session_status_check(request):
         return JsonResponse({'active': False, 'message': 'This session has expired.'})
 
     if not att_token.is_active:
-        return JsonResponse({'active': False, 'message': 'This session has been closed by the lecturer.'})
+        return JsonResponse({'active': False, 'message': 'This attendance session has ended. Check-in is no longer available.'})
 
     attendance = Attendance.objects.filter(course=att_token.course, is_active=True).first()
     if not attendance:
-        return JsonResponse({'active': False, 'message': 'This session has been closed.'})
+        return JsonResponse({'active': False, 'message': 'This attendance session has ended. Check-in is no longer available.'})
 
     return JsonResponse({'active': True, 'message': 'Session is active.', 'require_2fa': attendance.require_two_factor_auth})
 
