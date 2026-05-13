@@ -1368,32 +1368,61 @@ def join_course(request):
     if request.method == 'POST':
         join_code = request.POST.get('join_code', '').strip().upper()
         if not join_code:
-            messages.error(request, "Please enter a 6-character join code.")
+            messages.error(request, "Please enter a 6-character join code or attendance token.")
             return redirect('frontend:join_course')
 
         try:
             course = Course.objects.get(
                 Q(course_code=join_code) | Q(join_code=join_code)
             )
+        except Course.DoesNotExist:
+            attendance_token = AttendanceToken.objects.filter(
+                token__iexact=join_code
+            ).order_by('-generated_at').first()
 
-            # Check if active
-            if not course.is_active:
-                messages.warning(request, "This course is currently inactive.")
+            if not attendance_token:
+                messages.error(request, "Course not found. Please verify the 6-character join code or attendance token from your lecturer.")
                 return redirect('frontend:join_course')
 
-            # Check if already enrolled
-            if CourseEnrollment.objects.filter(course=course, student=request.user.student).exists():
-                messages.info(request, f"You are already enrolled in {course.course_code}.")
-                return redirect('frontend:my_courses')
+            if attendance_token.expires_at and attendance_token.expires_at <= timezone.now():
+                if attendance_token.is_active:
+                    attendance_token.is_active = False
+                    attendance_token.save(update_fields=['is_active'])
+                messages.error(request, "This attendance token has expired. Please request the course join code from your lecturer.")
+                return redirect('frontend:join_course')
 
-            # Enroll
-            CourseEnrollment.objects.create(course=course, student=request.user.student)
-            messages.success(request, f"Successfully enrolled in {course.name} ({course.course_code})!")
+            if not attendance_token.is_active:
+                messages.error(request, "This attendance token is no longer active. Please request the course join code from your lecturer.")
+                return redirect('frontend:join_course')
+
+            attendance = Attendance.objects.filter(
+                course=attendance_token.course,
+                is_active=True
+            ).order_by('-created_at').first()
+
+            if not attendance or not attendance.is_session_valid:
+                if attendance_token.is_active:
+                    attendance_token.is_active = False
+                    attendance_token.save(update_fields=['is_active'])
+                messages.error(request, "This attendance session has ended. Please request the course join code from your lecturer.")
+                return redirect('frontend:join_course')
+
+            course = attendance_token.course
+
+        # Check if active
+        if not course.is_active:
+            messages.warning(request, "This course is currently inactive.")
+            return redirect('frontend:join_course')
+
+        # Check if already enrolled
+        if CourseEnrollment.objects.filter(course=course, student=request.user.student).exists():
+            messages.info(request, f"You are already enrolled in {course.course_code}.")
             return redirect('frontend:my_courses')
 
-        except Course.DoesNotExist:
-            messages.error(request, "Course not found. Please verify the 6-character join code from your lecturer.")
-            return redirect('frontend:join_course')
+        # Enroll
+        CourseEnrollment.objects.create(course=course, student=request.user.student)
+        messages.success(request, f"Successfully enrolled in {course.name} ({course.course_code})!")
+        return redirect('frontend:my_courses')
 
     return render(request, 'courses/join.html')
 
