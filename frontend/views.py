@@ -1384,7 +1384,7 @@ def join_course(request):
             return redirect('frontend:my_courses')
 
         except Course.DoesNotExist:
-            messages.error(request, "We couldn't find a course with that code. Double-check the 6-character join code from your lecturer.")
+            messages.error(request, "Course not found. Please verify the 6-character join code from your lecturer.")
             return redirect('frontend:join_course')
 
     return render(request, 'courses/join.html')
@@ -1710,7 +1710,7 @@ def attendance_mark(request):
                 return render(request, 'attendance/mark.html')
 
             if not att_token.is_active:
-                messages.error(request, 'This attendance session has ended, so check-in is closed. Please contact your lecturer if you expected to check in.')
+                messages.error(request, 'This attendance session has ended. Please contact your lecturer if you expected to check in.')
                 return render(request, 'attendance/mark.html')
 
             course = att_token.course
@@ -1729,7 +1729,7 @@ def attendance_mark(request):
                 ).first()
                 
                 if not attendance:
-                    messages.error(request, 'This attendance session has ended, so check-in is closed. Please contact your lecturer if you expected to check in.')
+                    messages.error(request, 'This attendance session has ended. Please contact your lecturer if you expected to check in.')
                     return render(request, 'attendance/mark.html')
                 
                 # Check if 2FA is required
