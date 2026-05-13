@@ -113,8 +113,8 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
     </svg>
     <div>
-      <p class="text-sm font-semibold text-red-700 dark:text-red-300" id="session-closed-msg">Session has been closed.</p>
-      <p class="text-xs text-red-500 dark:text-red-400 mt-0.5">The lecturer has ended this attendance session. Check-in is no longer possible.</p>
+      <p class="text-sm font-semibold text-red-700 dark:text-red-300" id="session-closed-msg">{{ session_ended_title }}</p>
+      <p class="text-xs text-red-500 dark:text-red-400 mt-0.5">{{ session_ended_guidance }}</p>
     </div>
   </div>
 
@@ -433,7 +433,7 @@
   function applySessionState(data) {
     if (!data.active) {
       sessionClosed = true;
-      sessionClosedMsg.textContent = data.message || 'Session has been closed.';
+      sessionClosedMsg.textContent = data.message || '{{ session_ended_title|escapejs }}';
       sessionBanner.classList.remove('hidden');
       if (twofaBanner) twofaBanner.classList.add('hidden');
       submitBtn.disabled = true;
