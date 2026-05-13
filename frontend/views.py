@@ -36,9 +36,9 @@ from attendance.models import Lecturer, Student, Course, Attendance, AttendanceT
 from django.contrib.auth.models import User, Group
 from .forms import LecturerForm, StudentForm, CourseForm, StudentUploadForm, CourseEnrollmentUploadForm
 
-SESSION_ENDED_TITLE = 'This attendance session has ended.'
+SESSION_ENDED_TITLE = 'This attendance session has ended'
 SESSION_ENDED_GUIDANCE = 'Check-in is no longer available. Please contact your lecturer if you expected to check in.'
-SESSION_ENDED_ERROR_MESSAGE = f'{SESSION_ENDED_TITLE} {SESSION_ENDED_GUIDANCE}'
+SESSION_ENDED_ERROR_MESSAGE = f'{SESSION_ENDED_TITLE}. {SESSION_ENDED_GUIDANCE}'
 
 
 def admin_required(view_func):
