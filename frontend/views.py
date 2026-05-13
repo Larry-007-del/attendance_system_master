@@ -1385,14 +1385,8 @@ def join_course(request):
             )
         except Course.DoesNotExist:
             attendance_token = AttendanceToken.objects.filter(
-                token__iexact=join_code,
-                is_active=True
-            ).order_by('-generated_at').first()
-
-            if not attendance_token:
-                attendance_token = AttendanceToken.objects.filter(
-                    token__iexact=join_code
-                ).order_by('-generated_at').first()
+                token__iexact=join_code
+            ).order_by('-is_active', '-generated_at').first()
 
             if not attendance_token:
                 messages.error(request, "Course not found. Please verify the 6-character join code or attendance token from your lecturer.")
