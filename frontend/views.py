@@ -36,6 +36,9 @@ from attendance.models import Lecturer, Student, Course, Attendance, AttendanceT
 from django.contrib.auth.models import User, Group
 from .forms import LecturerForm, StudentForm, CourseForm, StudentUploadForm, CourseEnrollmentUploadForm
 
+SESSION_ENDED_MESSAGE = 'This attendance session has ended. Please contact your lecturer if you expected to check in.'
+SESSION_ENDED_BANNER_MESSAGE = 'This attendance session has ended. Check-in is no longer available.'
+
 
 def admin_required(view_func):
     """Restrict view to superusers only. Redirects others to dashboard with error."""
@@ -1710,7 +1713,7 @@ def attendance_mark(request):
                 return render(request, 'attendance/mark.html')
 
             if not att_token.is_active:
-                messages.error(request, 'This attendance session has ended. Please contact your lecturer if you expected to check in.')
+                messages.error(request, SESSION_ENDED_MESSAGE)
                 return render(request, 'attendance/mark.html')
 
             course = att_token.course
@@ -1729,7 +1732,7 @@ def attendance_mark(request):
                 ).first()
                 
                 if not attendance:
-                    messages.error(request, 'This attendance session has ended. Please contact your lecturer if you expected to check in.')
+                    messages.error(request, SESSION_ENDED_MESSAGE)
                     return render(request, 'attendance/mark.html')
                 
                 # Check if 2FA is required
@@ -1854,11 +1857,11 @@ def session_status_check(request):
         return JsonResponse({'active': False, 'message': 'This session has expired.'})
 
     if not att_token.is_active:
-        return JsonResponse({'active': False, 'message': 'This attendance session has ended. Check-in is no longer available.'})
+        return JsonResponse({'active': False, 'message': SESSION_ENDED_BANNER_MESSAGE})
 
     attendance = Attendance.objects.filter(course=att_token.course, is_active=True).first()
     if not attendance:
-        return JsonResponse({'active': False, 'message': 'This attendance session has ended. Check-in is no longer available.'})
+        return JsonResponse({'active': False, 'message': SESSION_ENDED_BANNER_MESSAGE})
 
     return JsonResponse({'active': True, 'message': 'Session is active.', 'require_2fa': attendance.require_two_factor_auth})
 
