@@ -1376,18 +1376,19 @@ def join_course(request):
                 Q(course_code=join_code) | Q(join_code=join_code)
             )
         except Course.DoesNotExist:
-            attendance_token = AttendanceToken.objects.filter(
-                token__iexact=join_code
-            ).order_by('-generated_at').first()
-
-            if not attendance_token:
+            try:
+                attendance_token = AttendanceToken.objects.get(token__iexact=join_code)
+            except AttendanceToken.DoesNotExist:
                 messages.error(request, "Course not found. Please verify the 6-character join code or attendance token from your lecturer.")
                 return redirect('frontend:join_course')
 
             if attendance_token.expires_at and attendance_token.expires_at <= timezone.now():
-                if attendance_token.is_active:
+                updated = AttendanceToken.objects.filter(
+                    pk=attendance_token.pk,
+                    is_active=True
+                ).update(is_active=False)
+                if updated:
                     attendance_token.is_active = False
-                    attendance_token.save(update_fields=['is_active'])
                 messages.error(request, "This attendance token has expired. Please request the course join code from your lecturer.")
                 return redirect('frontend:join_course')
 
@@ -1398,12 +1399,15 @@ def join_course(request):
             attendance = Attendance.objects.filter(
                 course=attendance_token.course,
                 is_active=True
-            ).order_by('-created_at').first()
+            ).order_by().first()
 
             if not attendance or not attendance.is_session_valid:
-                if attendance_token.is_active:
+                updated = AttendanceToken.objects.filter(
+                    pk=attendance_token.pk,
+                    is_active=True
+                ).update(is_active=False)
+                if updated:
                     attendance_token.is_active = False
-                    attendance_token.save(update_fields=['is_active'])
                 messages.error(request, "This attendance session has ended. Please request the course join code from your lecturer.")
                 return redirect('frontend:join_course')
 
