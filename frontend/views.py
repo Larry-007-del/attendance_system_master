@@ -1385,8 +1385,14 @@ def join_course(request):
             )
         except Course.DoesNotExist:
             attendance_token = AttendanceToken.objects.filter(
-                token__iexact=join_code
+                token__iexact=join_code,
+                is_active=True
             ).order_by('-generated_at').first()
+
+            if not attendance_token:
+                attendance_token = AttendanceToken.objects.filter(
+                    token__iexact=join_code
+                ).order_by('-generated_at').first()
 
             if not attendance_token:
                 messages.error(request, "Course not found. Please verify the 6-character join code or attendance token from your lecturer.")
@@ -1406,7 +1412,12 @@ def join_course(request):
                 is_active=True
             ).order_by('-created_at').first()
 
-            if not attendance or not attendance.is_session_valid:
+            if not attendance:
+                deactivate_attendance_token(attendance_token)
+                messages.error(request, "This attendance session has ended. Please request the course join code from your lecturer.")
+                return redirect('frontend:join_course')
+
+            if not attendance.is_session_valid:
                 deactivate_attendance_token(attendance_token)
                 messages.error(request, "This attendance session has ended. Please request the course join code from your lecturer.")
                 return redirect('frontend:join_course')
