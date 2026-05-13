@@ -1360,7 +1360,7 @@ def join_course(request):
     if request.method == 'POST':
         join_code = request.POST.get('join_code', '').strip().upper()
         if not join_code:
-            messages.error(request, "Please enter the 6-character join code from your lecturer.")
+            messages.error(request, "Please enter a join code.")
             return redirect('frontend:join_course')
 
         try:
