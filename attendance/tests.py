@@ -197,6 +197,21 @@ class CourseModelTest(TestCase):
     def test_default_require_two_factor(self):
         self.assertFalse(self.course.require_two_factor_auth)
 
+    def test_join_code_auto_generated(self):
+        self.assertTrue(self.course.join_code)
+        self.assertEqual(len(self.course.join_code), Course.JOIN_CODE_LENGTH)
+        self.assertEqual(self.course.join_code, self.course.join_code.upper())
+        self.assertTrue(self.course.join_code.isalnum())
+
+    def test_join_code_normalized(self):
+        course = Course.objects.create(
+            name='Systems Design',
+            course_code='CS202',
+            lecturer=self.lecturer,
+            join_code=' ab12cd ',
+        )
+        self.assertEqual(course.join_code, 'AB12CD')
+
     def test_unique_course_code(self):
         with self.assertRaises(Exception):
             Course.objects.create(

@@ -1,4 +1,6 @@
 import logging
+import secrets
+import string
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -102,6 +104,9 @@ class WebAuthnCredential(models.Model):
         return f"{self.user.username} - {self.name}"
 
 class Course(models.Model):
+    JOIN_CODE_LENGTH = 6
+    JOIN_CODE_ALPHABET = string.ascii_uppercase + string.digits
+
     name = models.CharField(max_length=100)
     course_code = models.CharField(max_length=10, unique=True)
     join_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
@@ -118,6 +123,31 @@ class Course(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.course_code})"
+
+    @classmethod
+    def generate_unique_join_code(cls, max_attempts=20):
+        for _ in range(max_attempts):
+            code = ''.join(
+                secrets.choice(cls.JOIN_CODE_ALPHABET)
+                for _ in range(cls.JOIN_CODE_LENGTH)
+            )
+            if not cls.objects.filter(
+                models.Q(join_code=code) | models.Q(course_code=code)
+            ).exists():
+                return code
+        raise ValidationError("Unable to generate a unique join code.")
+
+    def save(self, *args, **kwargs):
+        if self.join_code:
+            self.join_code = self.join_code.strip().upper()
+            conflict = self.__class__.objects.filter(
+                models.Q(join_code=self.join_code) | models.Q(course_code=self.join_code)
+            ).exclude(pk=self.pk).exists()
+            if conflict:
+                self.join_code = None
+        if not self.join_code:
+            self.join_code = self.generate_unique_join_code()
+        super().save(*args, **kwargs)
 
     def clean(self):
         super().clean()
