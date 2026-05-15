@@ -307,7 +307,7 @@ The project is configured for [Render](https://render.com) deployment via `rende
 
 ### Deployment Features
 
-- **Gunicorn** with 2 workers bound to `0.0.0.0:${PORT}`
+- **Gunicorn** using `WEB_CONCURRENCY` (defaults to 2 if unset) bound to `0.0.0.0:${PORT}`
 - **Health check** at `/health/` (configured in `render.yaml`)
 - **Cron session cleanup** — `close_expired_sessions --notify` runs every 30 minutes
 - **WhiteNoise** for static file serving with compression
