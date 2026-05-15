@@ -32,10 +32,13 @@ else:
     print(f'Superuser \"{username}\" already exists, skipping.')
 "
 fi
-echo "�🔥 Starting Gunicorn..."
+: "${PORT:=10000}"
+WORKERS="${WEB_CONCURRENCY:-2}"
+
+echo "🔥 Starting Gunicorn on port ${PORT} with ${WORKERS} workers..."
 exec gunicorn attendance_system.wsgi:application \
-    --bind "0.0.0.0:${PORT:-10000}" \
-    --workers 2 \
+    --bind "0.0.0.0:${PORT}" \
+    --workers "${WORKERS}" \
     --timeout 120 \
     --access-logfile - \
     --error-logfile -
