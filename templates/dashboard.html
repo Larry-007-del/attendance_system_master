@@ -327,42 +327,6 @@
   </div>
 </div>
 
-{% if is_admin %}
-<!-- Admin Analytics Charts -->
-<div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2 mt-6">
-  <div class="rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-md shadow-lg shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80">
-    <h5 class="mb-4 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Weekly Sessions</h5>
-    <div class="relative h-64 w-full flex items-center justify-center">
-      <canvas id="weeklyAttendanceChart"></canvas>
-      <!-- Empty state fallback if JS fails -->
-      <p class="absolute text-gray-400 text-sm italic" id="weeklyEmptyState" style="display:none">No recent sessions available</p>
-    </div>
-  </div>
-  <div class="rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-md shadow-lg shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80">
-    <h5 class="mb-4 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Top Enrollments</h5>
-    <div class="relative h-64 w-full flex items-center justify-center">
-      <canvas id="courseEnrollmentChart"></canvas>
-      <p class="absolute text-gray-400 text-sm italic" id="courseEmptyState" style="display:none">No enrollment data available</p>
-    </div>
-  </div>
-  <div class="lg:col-span-2 rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-md shadow-lg shadow-brand-500/5 dark:border-gray-700/50 dark:bg-gray-800/80">
-    <h5 class="mb-4 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Department Statistics</h5>
-    <div class="relative h-64 w-full flex items-center justify-center">
-      <canvas id="departmentChart"></canvas>
-      <p class="absolute text-gray-400 text-sm italic" id="deptEmptyState" style="display:none">No department data available</p>
-    </div>
-  </div>
-</div>
-<!-- Add script to trigger empty states if no data -->
-<script>
-  setTimeout(() => {
-    if(!window.Chart) return;
-    if(!Chart.getChart("weeklyAttendanceChart")) document.getElementById('weeklyEmptyState').style.display='block';
-    if(!Chart.getChart("courseEnrollmentChart")) document.getElementById('courseEmptyState').style.display='block';
-    if(!Chart.getChart("departmentChart")) document.getElementById('deptEmptyState').style.display='block';
-  }, 2000);
-</script>
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}
