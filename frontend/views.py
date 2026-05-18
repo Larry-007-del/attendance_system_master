@@ -1379,47 +1379,50 @@ def join_course(request):
             if updated:
                 attendance_token.is_active = False
 
-        try:
-            course = Course.objects.get(
-                Q(course_code=join_code) | Q(join_code=join_code)
-            )
-        except Course.DoesNotExist:
-            attendance_token = AttendanceToken.objects.filter(
-                token__iexact=join_code
-            ).order_by('-is_active', '-generated_at').first()
+        attendance_token = AttendanceToken.objects.filter(
+            token__iexact=join_code
+        ).order_by('-is_active', '-generated_at').first()
+        token_course = None
+        token_error = None
 
-            if not attendance_token:
-                messages.error(request, "Course not found. Please verify the 6-character join code or attendance token from your lecturer.")
-                return redirect('frontend:join_course')
-
+        if attendance_token:
             if attendance_token.expires_at and attendance_token.expires_at <= timezone.now():
                 deactivate_attendance_token(attendance_token)
-                messages.error(request, "This attendance token has expired. Please request the course join code from your lecturer.")
+                token_error = "This attendance token has expired. Please request the course join code from your lecturer."
+            elif not attendance_token.is_active:
+                token_error = "This attendance token is no longer active. Please request the course join code from your lecturer."
+            else:
+                attendance = Attendance.objects.filter(
+                    course=attendance_token.course,
+                    is_active=True
+                ).order_by('-created_at').first()
+
+                if not attendance or not attendance.is_session_valid:
+                    deactivate_attendance_token(attendance_token)
+                    token_error = "This attendance session has ended. Please request the course join code from your lecturer."
+                else:
+                    token_course = attendance_token.course
+
+        course = None
+        used_attendance_token = False
+
+        if token_course:
+            course = token_course
+            used_attendance_token = True
+        else:
+            try:
+                course = Course.objects.get(
+                    Q(course_code=join_code) | Q(join_code=join_code)
+                )
+            except Course.DoesNotExist:
+                if token_error:
+                    messages.error(request, token_error)
+                else:
+                    messages.error(request, "Course not found. Please verify the 6-character join code or attendance token from your lecturer.")
                 return redirect('frontend:join_course')
-
-            if not attendance_token.is_active:
-                messages.error(request, "This attendance token is no longer active. Please request the course join code from your lecturer.")
-                return redirect('frontend:join_course')
-
-            attendance = Attendance.objects.filter(
-                course=attendance_token.course,
-                is_active=True
-            ).order_by('-created_at').first()
-
-            if not attendance:
-                deactivate_attendance_token(attendance_token)
-                messages.error(request, "This attendance session has ended. Please request the course join code from your lecturer.")
-                return redirect('frontend:join_course')
-
-            if not attendance.is_session_valid:
-                deactivate_attendance_token(attendance_token)
-                messages.error(request, "This attendance session has ended. Please request the course join code from your lecturer.")
-                return redirect('frontend:join_course')
-
-            course = attendance_token.course
 
         # Check if active
-        if not course.is_active:
+        if not used_attendance_token and not course.is_active:
             messages.warning(request, "This course is currently inactive.")
             return redirect('frontend:join_course')
 
