@@ -9,14 +9,15 @@ from webauthn import (
     generate_authentication_options,
     verify_authentication_response,
     options_to_json,
-    base64url_to_bytes,
 )
+from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
 from webauthn.helpers.structs import (
     AuthenticatorSelectionCriteria,
     AuthenticatorAttachment,
     UserVerificationRequirement,
     RegistrationCredential,
     AuthenticationCredential,
+    PublicKeyCredentialDescriptor,
 )
 from webauthn.helpers.exceptions import InvalidRegistrationResponse, InvalidAuthenticationResponse
 
@@ -49,7 +50,10 @@ def register_begin(request):
 
     # Existing credentials to prevent re-registration of the same authenticator
     credentials = WebAuthnCredential.objects.filter(user=user)
-    exclude_credentials = [{"id": base64url_to_bytes(c.credential_id), "type": "public-key"} for c in credentials]
+    exclude_credentials = [
+        PublicKeyCredentialDescriptor(id=base64url_to_bytes(c.credential_id))
+        for c in credentials
+    ]
 
     options = generate_registration_options(
         rp_id=get_rp_id(request),
@@ -98,8 +102,8 @@ def register_complete(request):
         # Save the new credential
         WebAuthnCredential.objects.create(
             user=request.user,
-            credential_id=verification.credential_id.decode("utf-8"), # base64 string
-            public_key=verification.credential_public_key.decode("utf-8"),
+            credential_id=bytes_to_base64url(verification.credential_id),
+            public_key=bytes_to_base64url(verification.credential_public_key),
             sign_count=verification.sign_count,
             name="Platform Authenticator (Fingerprint)",
         )
@@ -124,7 +128,10 @@ def authenticate_begin(request):
     allow_credentials = []
     if user:
         creds = WebAuthnCredential.objects.filter(user=user)
-        allow_credentials = [{"id": base64url_to_bytes(c.credential_id), "type": "public-key"} for c in creds]
+        allow_credentials = [
+            PublicKeyCredentialDescriptor(id=base64url_to_bytes(c.credential_id))
+            for c in creds
+        ]
         if not allow_credentials:
             return JsonResponse({"error": "No biometric credentials registered."}, status=400)
 
@@ -174,6 +181,7 @@ def authenticate_complete(request):
 
         # Mark session as biometrically verified (useful for attendance checking)
         request.session["biometric_verified"] = True
+        request.session["webauthn_2fa_verified"] = True
         
         # We can also log the user in if this is a login flow.
         if not request.user.is_authenticated:
