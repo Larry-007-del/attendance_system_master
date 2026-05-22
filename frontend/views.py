@@ -180,7 +180,7 @@ def register_view(request):
 
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         request.session['last_activity'] = timezone.now().isoformat()
-        messages.success(request, f'Welcome to Exodus, {username}!')
+        messages.success(request, f'Welcome to Exodus! Your Student ID is {student_id}.')
         return redirect('frontend:dashboard')
 
     return render(request, 'frontend/register.html')
