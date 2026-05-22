@@ -35,7 +35,8 @@ class InactivityLogoutMiddleware:
                     if now - last_activity_dt > timedelta(minutes=timeout_minutes):
                         logout(request)
                         request.session.flush()
-                        messages.info(request, "You have been logged out due to inactivity.")
+                        if hasattr(request, '_messages'):
+                            messages.info(request, "You have been logged out due to inactivity.")
                         return redirect('frontend:login')
 
             request.session['last_activity'] = now.isoformat()

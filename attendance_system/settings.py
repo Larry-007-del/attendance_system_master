@@ -188,8 +188,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'attendance_system.middleware.InactivityLogoutMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'attendance_system.middleware.InactivityLogoutMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
