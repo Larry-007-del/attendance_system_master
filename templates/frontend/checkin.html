@@ -45,7 +45,7 @@
     <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
       Or Enter Token Manually
     </h3>
-    <form method="post" id="attendance-form" class="flex flex-col items-center">
+    <form method="post" id="attendance-form" class="flex flex-col items-center" hx-boost="false">
       {% csrf_token %}
       <input type="hidden" id="attendance-latitude" name="latitude" />
       <input type="hidden" id="attendance-longitude" name="longitude" />
@@ -272,12 +272,13 @@
                           const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
                           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                           const distance = R * c;
-                          
+                          const effectiveRadius = Math.min(50 + currentPosition.coords.accuracy, 150);
+                          const distMsg = Math.round(distance) + 'm';
+                            
                             L.circle([lLat, lLng], {color: 'green', fillColor: '#10b981', fillOpacity: 0.1, radius: 50}).addTo(map);
                             L.marker([lLat, lLng]).addTo(map).bindPopup('Lecturer').openPopup();
                             
-                            const distMsg = Math.round(distance) + 'm';
-                            if (distance <= 50) {
+                          if (distance <= effectiveRadius) {
                               updateStatus(`Session Ready. Distance: ${distMsg} (Valid)`, false, false);
                           } else {
                               updateStatus(`Session Ready. Distance: ${distMsg} (Too Far!)`, true, true);
@@ -361,6 +362,7 @@
       const formData = new FormData(form);
       formData.append('latitude', currentPosition.coords.latitude);
       formData.append('longitude', currentPosition.coords.longitude);
+      formData.append('accuracy', currentPosition.coords.accuracy);
       formData.append('attendance_token', formData.get('token'));
 
       fetch('{% url "submit_location" %}', {

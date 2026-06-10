@@ -17,8 +17,7 @@ class StudentLoginRequestSerializer(serializers.Serializer):
 
 
 class StudentLoginSuccessSerializer(serializers.Serializer):
-    access = serializers.CharField()
-    refresh = serializers.CharField()
+    token = serializers.CharField()
     user_id = serializers.IntegerField()
     username = serializers.CharField()
     student_id = serializers.CharField()
@@ -31,8 +30,7 @@ class StaffLoginRequestSerializer(serializers.Serializer):
 
 
 class StaffLoginSuccessSerializer(serializers.Serializer):
-    access = serializers.CharField()
-    refresh = serializers.CharField()
+    token = serializers.CharField()
     user_id = serializers.IntegerField()
     username = serializers.CharField()
     staff_id = serializers.CharField()
@@ -153,6 +151,7 @@ class LogoutSerializer(serializers.Serializer):
 class SubmitLocationSerializer(serializers.Serializer):
     latitude = serializers.FloatField(min_value=-90, max_value=90)
     longitude = serializers.FloatField(min_value=-180, max_value=180)
+    accuracy = serializers.FloatField(required=False, default=0.0)
     attendance_token = serializers.CharField(max_length=10)
 
     def validate_attendance_token(self, value):

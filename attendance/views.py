@@ -191,6 +191,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         token = (request.data.get('token') or '').strip().upper()
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
+        accuracy = request.data.get('accuracy', 0.0)
 
         if not token:
             return api_error('Token is required.', APIErrorCode.TOKEN_REQUIRED, status.HTTP_400_BAD_REQUEST)
@@ -201,6 +202,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         try:
             latitude = float(latitude)
             longitude = float(longitude)
+            accuracy = float(accuracy)
         except (ValueError, TypeError):
             return api_error('Invalid GPS coordinates.', APIErrorCode.MISSING_REQUIRED_FIELDS, status.HTTP_400_BAD_REQUEST)
 
@@ -228,13 +230,14 @@ class CourseViewSet(viewsets.ModelViewSet):
                     status.HTTP_403_FORBIDDEN,
                 )
 
-            if not attendance.is_within_radius(latitude, longitude):
+            effective_radius = min(50 + accuracy, 150)
+            if not attendance.is_within_radius(latitude, longitude, radius_meters=effective_radius):
                 return api_error('You are outside the classroom boundary.', APIErrorCode.LOCATION_OUT_OF_RANGE, status.HTTP_400_BAD_REQUEST)
             
             from django.db import transaction
             with transaction.atomic():
                 locked_attendance = Attendance.objects.select_for_update().get(pk=attendance.pk)
-                AttendanceStudent.objects.update_or_create(
+                attendance_student, created = AttendanceStudent.objects.get_or_create(
                     attendance=locked_attendance,
                     student=student,
                     defaults={
@@ -242,6 +245,9 @@ class CourseViewSet(viewsets.ModelViewSet):
                         'longitude': longitude
                     }
                 )
+                if not created:
+                    return Response({'message': 'Attendance already marked for this session.'}, status=status.HTTP_200_OK)
+                    
                 locked_attendance.present_students.add(student)
 
             return Response({'message': 'Attendance recorded successfully.'}, status=status.HTTP_200_OK)
@@ -557,6 +563,7 @@ class SubmitLocationView(generics.GenericAPIView):
         
         lat_float = serializer.validated_data['latitude']
         lon_float = serializer.validated_data['longitude']
+        accuracy = serializer.validated_data.get('accuracy', 0.0)
         attendance_token = serializer.validated_data['attendance_token']
 
         try:
@@ -597,7 +604,9 @@ class SubmitLocationView(generics.GenericAPIView):
                 status.HTTP_403_FORBIDDEN,
             )
 
-        if attendance.is_within_radius(lat_float, lon_float):
+        effective_radius = min(50 + accuracy, 150)
+
+        if attendance.is_within_radius(lat_float, lon_float, radius_meters=effective_radius):
             user = request.user
             if hasattr(user, 'student'):
                 student = user.student
@@ -607,7 +616,7 @@ class SubmitLocationView(generics.GenericAPIView):
                     # Add student to attendance with location coordinates
                     with transaction.atomic():
                         locked_attendance = Attendance.objects.select_for_update().get(pk=attendance.pk)
-                        AttendanceStudent.objects.get_or_create(
+                        attendance_student, created = AttendanceStudent.objects.get_or_create(
                             attendance=locked_attendance,
                             student=student,
                             defaults={
@@ -615,6 +624,10 @@ class SubmitLocationView(generics.GenericAPIView):
                                 'longitude': lon_float
                             }
                         )
+                        
+                        if not created:
+                            return Response({'status': 'Attendance already marked for this session.'}, status=status.HTTP_200_OK)
+
                         # CRITICAL FIX: Add student to present_students M2M field
                         locked_attendance.present_students.add(student)
                         
@@ -629,8 +642,8 @@ class SubmitLocationView(generics.GenericAPIView):
         distance_meters = distance_km * 1000
         
         return api_error(
-            f'Location is out of range. Distance: {distance_meters:.2f}m '
-            f'(Max 50m)', 
+            f'Location is out of range. Distance: {distance_meters:.0f}m '
+            f'(Max {effective_radius:.0f}m)', 
             APIErrorCode.LOCATION_OUT_OF_RANGE, 
             status.HTTP_400_BAD_REQUEST
         )
