@@ -782,6 +782,8 @@ class AttendanceViewsTest(FrontendViewsTestCase):
                 'token': 'NEW123',
                 'duration_hours': 2,
                 'radius_meters': 50,
+                'latitude': '5.6037',
+                'longitude': '-0.1870',
             },
         )
 
