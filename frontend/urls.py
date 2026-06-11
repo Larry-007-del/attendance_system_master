@@ -56,8 +56,8 @@ urlpatterns = [
     # Courses
     path('courses/', views.course_list, name='course_list'),
     path('courses/my/', views.my_courses, name='my_courses'),
-    path('courses/upload-enrollments/', views.upload_enrollments, name='upload_enrollments'),
     path('courses/join/', views.join_course, name='join_course'),
+    path('courses/upload-enrollments/', views.upload_enrollments, name='upload_enrollments'),
     path('courses/create/', views.course_create, name='course_create'),
     path('courses/<int:pk>/', views.course_detail, name='course_detail'),
     path('courses/<int:pk>/edit/', views.course_edit, name='course_edit'),
