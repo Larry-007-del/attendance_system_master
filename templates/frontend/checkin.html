@@ -272,7 +272,7 @@
                           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                           const distance = R * c;
                           const baseRadius = data.radius_meters || 50;
-                          const effectiveRadius = Math.min(baseRadius + currentPosition.coords.accuracy + 150, Math.max(500, baseRadius));
+                          const effectiveRadius = baseRadius + currentPosition.coords.accuracy + 800;
                           const distMsg = Math.round(distance) + 'm';
                             
                             L.circle([lLat, lLng], {color: 'green', fillColor: '#10b981', fillOpacity: 0.1, radius: effectiveRadius}).addTo(map);
