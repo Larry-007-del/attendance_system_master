@@ -474,6 +474,11 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': False,
         },
+        'attendance': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
 }
 
