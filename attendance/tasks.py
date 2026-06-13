@@ -325,3 +325,14 @@ def send_weekly_attendance_reports():
         
     logger.info("Weekly attendance reports dispatched successfully. Sent %d emails.", count)
     return f"Sent {count} weekly reports."
+
+@shared_task
+def close_expired_sessions_task():
+    """Celery Beat task to automatically close expired attendance sessions"""
+    from django.core.management import call_command
+    try:
+        call_command('close_expired_sessions', '--notify')
+        return "Successfully ran close_expired_sessions command."
+    except Exception as exc:
+        logger.exception("Failed to run close_expired_sessions: %s", exc)
+        raise

@@ -501,4 +501,8 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'attendance.tasks.send_weekly_attendance_reports',
         'schedule': crontab(day_of_week='fri', hour=17, minute=0), # Every Friday at 5 PM UTC
     },
+    'close-expired-sessions-every-30-mins': {
+        'task': 'attendance.tasks.close_expired_sessions_task',
+        'schedule': crontab(minute='*/30'), # Every 30 minutes
+    },
 }
