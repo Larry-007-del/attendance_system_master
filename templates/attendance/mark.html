@@ -153,25 +153,79 @@
       statusText.textContent = 'Acquiring satellite location...';
       statusText.className = 'mt-2 animate-pulse text-center text-sm text-gray-400';
       if (radarPing) radarPing.classList.add('animate-ping');
+      const successHandler = (position) => {
+        latInput.value = position.coords.latitude.toFixed(6);
+        lngInput.value = position.coords.longitude.toFixed(6);
+        statusText.textContent = 'Location Secured';
+        statusText.className = 'mt-2 text-center text-sm text-emerald-600 dark:text-emerald-400 font-semibold';
+        if (radarPing) { radarPing.classList.replace('bg-brand-400', 'bg-emerald-400'); radarPing.classList.replace('bg-red-400', 'bg-emerald-400'); }
+        const radarCore = document.querySelector('#gps-radar > span:last-child');
+        if (radarCore) { radarCore.classList.remove('bg-brand-600', 'bg-red-600'); radarCore.classList.add('bg-emerald-600'); }
+      };
+
+      const failHandler = () => {
+        statusText.innerHTML = 'Failed to acquire location. <button type="button" onclick="acquireLocationMark()" class="underline font-semibold text-brand-600 dark:text-brand-400 ml-1">Retry</button>';
+        statusText.className = 'mt-2 text-center text-sm text-red-500 font-medium';
+        if (radarPing) { radarPing.classList.replace('bg-brand-400', 'bg-red-400'); radarPing.classList.replace('bg-emerald-400', 'bg-red-400'); radarPing.classList.remove('animate-ping'); }
+        const radarCore = document.querySelector('#gps-radar > span:last-child');
+        if (radarCore) { radarCore.classList.remove('bg-brand-600', 'bg-emerald-600'); radarCore.classList.add('bg-red-600'); }
+      };
+
+      let resolved = false;
+
+      const tryLowAccuracy = () => {
+        if (resolved) return;
+        statusText.textContent = 'Acquiring general location...';
+        
+        let lowResResolved = false;
+        const lowResFallbackTimer = setTimeout(() => {
+          if (!lowResResolved) {
+            lowResResolved = true;
+            failHandler();
+          }
+        }, 10000);
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (lowResResolved) return;
+            lowResResolved = true;
+            clearTimeout(lowResFallbackTimer);
+            resolved = true;
+            successHandler(pos);
+          }, 
+          (error) => {
+            if (lowResResolved) return;
+            lowResResolved = true;
+            clearTimeout(lowResFallbackTimer);
+            resolved = true;
+            failHandler();
+          }, 
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+        );
+      };
+
+      const highResTimer = setTimeout(() => {
+        if (!resolved) tryLowAccuracy();
+      }, 5000);
+
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          latInput.value = position.coords.latitude.toFixed(6);
-          lngInput.value = position.coords.longitude.toFixed(6);
-          statusText.textContent = 'Location Secured';
-          statusText.className = 'mt-2 text-center text-sm text-emerald-600 dark:text-emerald-400 font-semibold';
-          if (radarPing) { radarPing.classList.replace('bg-brand-400', 'bg-emerald-400'); radarPing.classList.replace('bg-red-400', 'bg-emerald-400'); }
-          const radarCore = document.querySelector('#gps-radar > span:last-child');
-          if (radarCore) { radarCore.classList.remove('bg-brand-600', 'bg-red-600'); radarCore.classList.add('bg-emerald-600'); }
+        (pos) => {
+          if (resolved) return;
+          resolved = true;
+          clearTimeout(highResTimer);
+          successHandler(pos);
         },
-        (error) => {
-          console.error('Geolocation error:', error);
-          statusText.innerHTML = 'Failed to acquire location. <button type="button" onclick="acquireLocationMark()" class="underline font-semibold text-brand-600 dark:text-brand-400 ml-1">Retry</button>';
-          statusText.className = 'mt-2 text-center text-sm text-red-500 font-medium';
-          if (radarPing) { radarPing.classList.replace('bg-brand-400', 'bg-red-400'); radarPing.classList.replace('bg-emerald-400', 'bg-red-400'); radarPing.classList.remove('animate-ping'); }
-          const radarCore = document.querySelector('#gps-radar > span:last-child');
-          if (radarCore) { radarCore.classList.remove('bg-brand-600', 'bg-emerald-600'); radarCore.classList.add('bg-red-600'); }
+        (err) => {
+          if (resolved) return;
+          clearTimeout(highResTimer);
+          if (err.code === 1) {
+            resolved = true;
+            failHandler();
+          } else {
+            tryLowAccuracy();
+          }
         },
-        { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     };
     acquireLocationMark();
