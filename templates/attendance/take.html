@@ -54,14 +54,17 @@
           </div>
           <p class="mt-2 text-center text-xs text-gray-400">Students must enter this token to mark their attendance.</p>
           <script>
-          function readTokenAloud(token) {
-              if ('speechSynthesis' in window) {
+            function readTokenAloud(token) {
+              if (window.ExodusNative) {
+                  // Use native Flutter TTS bridge for the APK
+                  window.ExodusNative.postMessage('speakToken:' + token);
+              } else if ('speechSynthesis' in window) {
                   const msg = new SpeechSynthesisUtterance('The attendance token is ' + token.split('').join(' '));
                   window.speechSynthesis.speak(msg);
               } else {
                   alert('Text-to-speech is not supported in this browser.');
               }
-          }
+            }
           </script>
         </div>
       </div>
