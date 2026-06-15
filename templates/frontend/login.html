@@ -50,7 +50,7 @@
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.GET.next }}" />
 
-            <div x-data="{ focused: false, hasValue: document.getElementById('username')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('username')?.value.length > 0, 100)" class="relative focus-within:z-10">
+            <div x-data="{ focused: false, hasValue: false }" x-init="setInterval(()=> hasValue = (document.getElementById('username')?.value.length > 0 || document.getElementById('username')?.matches(':-webkit-autofill')), 100)" class="relative focus-within:z-10">
               <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
@@ -74,7 +74,7 @@
               </label>
             </div>
 
-            <div x-data="{ show: false, focused: false, hasValue: document.getElementById('password')?.value.length > 0 }" x-init="setTimeout(()=> hasValue = document.getElementById('password')?.value.length > 0, 100)">
+            <div x-data="{ show: false, focused: false, hasValue: false }" x-init="setInterval(()=> hasValue = (document.getElementById('password')?.value.length > 0 || document.getElementById('password')?.matches(':-webkit-autofill')), 100)">
               <div class="relative focus-within:z-10">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <svg class="h-5 w-5 text-indigo-200/70" fill="currentColor" viewBox="0 0 20 20">
@@ -136,14 +136,25 @@
               Sign in
             </button>
 
-            <!-- Registration Link -->
-            <div class="text-center mt-6">
+            <!-- Links -->
+            <div class="text-center mt-6 space-y-4 border-t border-white/10 pt-6">
               <p class="text-sm text-indigo-200">
                 Don't have an account?
                 <a href="{% url 'frontend:register' %}" class="font-bold text-white hover:text-brand-200 transition-colors">
                   Create an account
                 </a>
               </p>
+              
+              <a
+                href="{% static 'apk/exodus.apk' %}"
+                download="ExodusApp.apk"
+                class="inline-flex w-full items-center justify-center space-x-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-white/20 focus:outline-none transition-all duration-200 border border-white/10"
+              >
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.523 15.3414C17.523 15.3414 16.5113 16.2084 15.1873 17.1514C13.8632 18.0945 12.062 19.3414 12 19.3414C11.938 19.3414 10.1368 18.0945 8.81273 17.1514C7.48866 16.2084 6.47699 15.3414 6.47699 15.3414C5.64203 14.619 5.86536 13.916 6.4259 13.916H8.97699V7.91602C8.97699 6.81145 9.87242 5.91602 10.977 5.91602H13.023C14.1276 5.91602 15.023 6.81145 15.023 7.91602V13.916H17.5741C18.1346 13.916 18.358 14.619 17.523 15.3414Z" />
+                </svg>
+                <span>Download Android App</span>
+              </a>
             </div>
           </form>
       </div>
