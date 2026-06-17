@@ -2446,11 +2446,6 @@ def webauthn_register_begin(request):
         user_id=str(user.id).encode(),
         user_name=user.username,
         user_display_name=user.get_full_name() or user.username,
-        authenticator_selection=AuthenticatorSelectionCriteria(
-            authenticator_attachment=AuthenticatorAttachment.PLATFORM,
-            user_verification=UserVerificationRequirement.REQUIRED,
-            resident_key=ResidentKeyRequirement.PREFERRED,
-        ),
         exclude_credentials=exclude_credentials,
     )
 
