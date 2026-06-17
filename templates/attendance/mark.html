@@ -171,64 +171,49 @@
         if (radarCore) { radarCore.classList.remove('bg-brand-600', 'bg-emerald-600'); radarCore.classList.add('bg-red-600'); }
       };
 
-      let resolved = false;
+        let resolved = false;
+        let watchId = null;
+        let bestPosition = null;
 
-      const tryLowAccuracy = () => {
-        if (resolved) return;
-        statusText.textContent = 'Acquiring general location...';
-        
-        let lowResResolved = false;
-        const lowResFallbackTimer = setTimeout(() => {
-          if (!lowResResolved) {
-            lowResResolved = true;
-            failHandler();
-          }
-        }, 10000);
-
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            if (lowResResolved) return;
-            lowResResolved = true;
-            clearTimeout(lowResFallbackTimer);
-            resolved = true;
-            successHandler(pos);
-          }, 
-          (error) => {
-            if (lowResResolved) return;
-            lowResResolved = true;
-            clearTimeout(lowResFallbackTimer);
-            resolved = true;
-            failHandler();
-          }, 
-          { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
-        );
-      };
-
-      const highResTimer = setTimeout(() => {
-        if (!resolved) tryLowAccuracy();
-      }, 5000);
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        const finalize = () => {
           if (resolved) return;
           resolved = true;
-          clearTimeout(highResTimer);
-          successHandler(pos);
-        },
-        (err) => {
-          if (resolved) return;
-          clearTimeout(highResTimer);
-          if (err.code === 1) {
-            resolved = true;
-            failHandler();
+          if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+          if (radarPing) radarPing.classList.remove('animate-ping');
+          
+          if (bestPosition) {
+            successHandler(bestPosition);
           } else {
-            tryLowAccuracy();
+            failHandler();
           }
-        },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-    };
-    acquireLocationMark();
+        };
+
+        const fallbackTimer = setTimeout(finalize, 10000);
+
+        watchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            if (resolved) return;
+            if (!bestPosition || pos.coords.accuracy < bestPosition.coords.accuracy) {
+              bestPosition = pos;
+            }
+            if (pos.coords.accuracy <= 60) {
+              clearTimeout(fallbackTimer);
+              finalize();
+            }
+          },
+          (err) => {
+            if (resolved) return;
+            if (err.code === 1) {
+              resolved = true;
+              clearTimeout(fallbackTimer);
+              if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+              failHandler();
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      };
+      acquireLocationMark();
   });
 </script>
 

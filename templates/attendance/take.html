@@ -354,67 +354,52 @@
     };
 
     // Native browser timeouts are notoriously buggy and often hang forever. 
-    // We use a manual setTimeout wrapper to guarantee execution.
+    // watchPosition solves this by forcing the GPS hardware to wake up and continuously stream.
     let resolved = false;
+    let watchId = null;
+    let bestPosition = null;
 
-    const tryLowAccuracy = () => {
+    const finalize = () => {
       if (resolved) return;
-      console.log('High accuracy failed or timed out, trying low accuracy...');
-      statusLabel.textContent = 'Acquiring general location…';
+      resolved = true;
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
       
-      let lowResResolved = false;
-      const lowResFallbackTimer = setTimeout(() => {
-        if (!lowResResolved) {
-          lowResResolved = true;
-          failHandler(3, 'Location request timed out completely. Please ensure location services are enabled and try again.');
-        }
-      }, 10000);
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (lowResResolved) return;
-          lowResResolved = true;
-          clearTimeout(lowResFallbackTimer);
-          resolved = true;
-          successHandler(pos);
-        }, 
-        (error) => {
-          if (lowResResolved) return;
-          lowResResolved = true;
-          clearTimeout(lowResFallbackTimer);
-          resolved = true;
-          const msgs = { 1: 'Location permission denied. Please enable location services.', 2: 'Location unavailable. Check your GPS or Wi-Fi.', 3: 'Location request timed out completely. Please try again.' };
-          failHandler(error.code, msgs[error.code] || 'Unable to retrieve your location.');
-        }, 
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
-      );
+      if (bestPosition) {
+        successHandler(bestPosition);
+      } else {
+        failHandler(3, 'Location request timed out completely. Please ensure location services are enabled and try again.');
+      }
     };
 
-    const highResTimer = setTimeout(() => {
-      if (!resolved) {
-        tryLowAccuracy();
-      }
-    }, 5000);
+    // Give the browser 10 seconds total to find the best possible location
+    const fallbackTimer = setTimeout(finalize, 10000);
 
-    navigator.geolocation.getCurrentPosition(
+    watchId = navigator.geolocation.watchPosition(
       (pos) => {
         if (resolved) return;
-        resolved = true;
-        clearTimeout(highResTimer);
-        successHandler(pos);
-      }, 
+        // Keep track of the most accurate position received
+        if (!bestPosition || pos.coords.accuracy < bestPosition.coords.accuracy) {
+          bestPosition = pos;
+        }
+        // If accuracy is good enough (<= 60 meters), accept immediately
+        if (pos.coords.accuracy <= 60) {
+          clearTimeout(fallbackTimer);
+          finalize();
+        }
+      },
       (err) => {
         if (resolved) return;
-        clearTimeout(highResTimer);
-        // Error 1 is PERMISSION_DENIED. If they denied it, don't even bother trying low accuracy.
+        // Error 1 is PERMISSION_DENIED. Fail immediately.
         if (err.code === 1) {
           resolved = true;
+          clearTimeout(fallbackTimer);
+          if (watchId !== null) navigator.geolocation.clearWatch(watchId);
           failHandler(1, 'Location permission denied. Please enable location services.');
-        } else {
-          tryLowAccuracy();
         }
-      }, 
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        // For other errors, we keep waiting in case the hardware recovers,
+        // or until the 10s fallbackTimer finishes and returns the bestPosition (if any).
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }
 </script>
