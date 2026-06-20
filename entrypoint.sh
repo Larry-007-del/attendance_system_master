@@ -31,8 +31,8 @@ fi
 : "${PORT:=10000}"
 WORKERS="${WEB_CONCURRENCY:-2}"
 
-echo "🚀 Scheduling Celery worker to start in the background..."
-(sleep 15 && celery -A attendance_system worker -B -l info --pool=solo) &
+echo "🚀 Starting Celery worker in the background..."
+celery -A attendance_system worker -B -l info &
 
 echo "🔥 Starting Gunicorn on port ${PORT} with ${WORKERS} workers..."
 exec gunicorn attendance_system.wsgi:application \
