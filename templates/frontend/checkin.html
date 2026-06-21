@@ -237,11 +237,21 @@
         optionalServices: ['0000180f-0000-1000-8000-00805f9b34fb']
       });
 
-      if (!device.name || !device.name.startsWith('EXODUS_')) {
-          throw new Error("Please select the correct EXODUS beacon.");
+      // If the Android phone hid the beacon name due to 31-byte packet size limits,
+      // we can still verify proximity! We just need the student to provide the token manually.
+      let detectedToken = "";
+      if (device.name && device.name.startsWith('EXODUS_')) {
+          detectedToken = device.name.replace('EXODUS_', '');
+      } else {
+          detectedToken = tokenInput ? tokenInput.value.trim() : "";
+          if (!detectedToken || detectedToken.length < 5) {
+              const userToken = prompt("Proximity verified! However, your device couldn't read the beacon's name. Please enter the token shown on the lecturer's screen:");
+              if (!userToken) {
+                  throw new Error("Token is required to complete check in.");
+              }
+              detectedToken = userToken.trim();
+          }
       }
-
-      const detectedToken = device.name.replace('EXODUS_', '');
       btnText.innerText = 'Beacon Found!';
       btn.classList.remove('animate-pulse');
       btn.classList.replace('bg-indigo-50', 'bg-emerald-50');
