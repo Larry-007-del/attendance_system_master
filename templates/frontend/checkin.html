@@ -178,13 +178,13 @@
   const attendanceMarkUrl = '{% url "frontend:attendance_mark" %}';
 
   // Display correct BLE button based on platform
-  document.addEventListener('DOMContentLoaded', () => {
+  (function initBleButtons() {
       if (window.ExodusNative) {
         document.getElementById('bleScanBtn').style.display = 'flex';
       } else if (navigator.bluetooth) {
         document.getElementById('webBleScanBtn').style.display = 'flex';
       }
-  });
+  })();
 
   // Flutter BLE Scanner Logic
   window.scanBleBeacon = function() {

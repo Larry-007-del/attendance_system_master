@@ -73,18 +73,18 @@
             }
 
             // Automatically start BLE broadcast when the session page is loaded
-            document.addEventListener('DOMContentLoaded', () => {
+            (function initBleBroadcast() {
               if (window.ExodusNative) {
                 window.ExodusNative.postMessage('startBleBroadcast:{{ active_session.token }}');
                 const badge = document.getElementById('bleBroadcastBadge');
                 if (badge) badge.style.display = 'flex';
                 
-                // Also add a listener to stop broadcast when leaving the page (optional, but good practice)
+                // Also add a listener to stop broadcast when leaving the page
                 window.addEventListener('beforeunload', () => {
                   window.ExodusNative.postMessage('stopBleBroadcast');
                 });
               }
-            });
+            })();
           </script>
         </div>
       </div>
