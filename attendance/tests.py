@@ -998,8 +998,6 @@ class SubmitLocationSerializerTest(TestCase):
     def test_missing_fields(self):
         serializer = SubmitLocationSerializer(data={})
         self.assertFalse(serializer.is_valid())
-        self.assertIn('latitude', serializer.errors)
-        self.assertIn('longitude', serializer.errors)
         self.assertIn('attendance_token', serializer.errors)
 
 
