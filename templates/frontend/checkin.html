@@ -202,8 +202,21 @@
     document.getElementById('bleScanBtn').classList.replace('bg-blue-50', 'bg-emerald-50');
     document.getElementById('bleScanBtn').classList.replace('text-blue-700', 'text-emerald-700');
     
+    let detectedToken = token;
+    if (!detectedToken || detectedToken.length < 5) {
+        detectedToken = tokenInput ? tokenInput.value.trim() : "";
+        if (!detectedToken || detectedToken.length < 5) {
+            const userToken = prompt("Proximity verified! However, your device couldn't read the beacon's name. Please enter the token shown on the lecturer's screen:");
+            if (!userToken) {
+                alert("Token is required to complete check in.");
+                return;
+            }
+            detectedToken = userToken.trim();
+        }
+    }
+
     if (tokenInput) {
-       tokenInput.value = token;
+       tokenInput.value = detectedToken;
        if (bleVerifiedInput) bleVerifiedInput.value = 'true';
        submitAttendance(); // directly check and submit
     }
@@ -233,8 +246,7 @@
       btn.classList.add('animate-pulse');
 
       const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: ['0000180f-0000-1000-8000-00805f9b34fb']
+        filters: [{ services: ['e0d00001-0000-1000-8000-00805f9b34fb'] }]
       });
 
       // If the Android phone hid the beacon name due to 31-byte packet size limits,
