@@ -58,6 +58,20 @@
         <span id="bleScanText">Scan Bluetooth Beacon</span>
       </button>
 
+      <!-- Web Bluetooth Beacon Scanner Button (Only shown if navigator.bluetooth exists and NOT ExodusNative) -->
+      <button
+        type="button"
+        id="webBleScanBtn"
+        style="display: none;"
+        onclick="scanWebBluetooth()"
+        class="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-3 text-sm font-semibold text-indigo-700 dark:text-indigo-300 transition-all hover:bg-indigo-100 dark:hover:bg-indigo-900/40 active:scale-95"
+      >
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+        <span id="webBleScanText">Scan via Web Bluetooth</span>
+      </button>
+
       <!-- QR Code Scanner Button -->
       <button
         type="button"
@@ -194,8 +208,54 @@
         }, 3000);
       };
 
+      // Web Bluetooth Scanner Logic (for Laptops/PCs)
+      window.scanWebBluetooth = async function() {
+        if (!navigator.bluetooth) {
+          alert("Web Bluetooth is not supported in this browser. Please use Chrome or Edge.");
+          return;
+        }
+        
+        try {
+          const btnText = document.getElementById('webBleScanText');
+          btnText.innerText = 'Select Lecturer Device...';
+          const btn = document.getElementById('webBleScanBtn');
+          btn.classList.add('animate-pulse');
+
+          const device = await navigator.bluetooth.requestDevice({
+            filters: [{ namePrefix: 'EXODUS_' }],
+            optionalServices: ['0000180f-0000-1000-8000-00805f9b34fb'] // Battery service we used as placeholder
+          });
+
+          // Device selected! Extract token
+          const detectedToken = device.name.replace('EXODUS_', '');
+          
+          btnText.innerText = 'Beacon Found!';
+          btn.classList.remove('animate-pulse');
+          btn.classList.replace('bg-indigo-50', 'bg-emerald-50');
+          btn.classList.replace('text-indigo-700', 'text-emerald-700');
+
+          const tokenInput = document.querySelector('input[name="token"]');
+          if (tokenInput) {
+             tokenInput.value = detectedToken;
+             markForm.dispatchEvent(new Event('submit', { cancelable: true }));
+          }
+        } catch (error) {
+          console.error("Web Bluetooth Error: ", error);
+          const btnText = document.getElementById('webBleScanText');
+          btnText.innerText = 'Scan Cancelled/Failed';
+          document.getElementById('webBleScanBtn').classList.remove('animate-pulse');
+          document.getElementById('webBleScanBtn').classList.replace('text-indigo-700', 'text-red-500');
+          setTimeout(() => {
+             btnText.innerText = 'Scan via Web Bluetooth';
+             document.getElementById('webBleScanBtn').classList.replace('text-red-500', 'text-indigo-700');
+          }, 3000);
+        }
+      };
+
       if (window.ExodusNative) {
         document.getElementById('bleScanBtn').style.display = 'flex';
+      } else if (navigator.bluetooth) {
+        document.getElementById('webBleScanBtn').style.display = 'flex';
       }
   
       window.acquireLocationMark = function() {
