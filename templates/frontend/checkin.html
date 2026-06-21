@@ -233,20 +233,31 @@
       btn.classList.add('animate-pulse');
 
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: 'EXODUS_' }],
+        acceptAllDevices: true,
         optionalServices: ['0000180f-0000-1000-8000-00805f9b34fb']
       });
 
-      const detectedToken = device.name.replace('EXODUS_', '');
+      // Windows caches BLE device names. It might be "EXODUS_Token" or just "iPhone" / "Desktop".
+      let detectedToken = "";
+      if (device.name && device.name.startsWith('EXODUS_')) {
+          detectedToken = device.name.replace('EXODUS_', '');
+      }
+
       btnText.innerText = 'Beacon Found!';
       btn.classList.remove('animate-pulse');
       btn.classList.replace('bg-indigo-50', 'bg-emerald-50');
       btn.classList.replace('text-indigo-700', 'text-emerald-700');
 
       if (tokenInput) {
-         tokenInput.value = detectedToken;
+         if (detectedToken) {
+             tokenInput.value = detectedToken;
+         }
          if (bleVerifiedInput) bleVerifiedInput.value = 'true';
-         submitAttendance(); // directly check and submit
+         
+         // If a token is present, we can auto-submit.
+         if (tokenInput.value.length >= 5) {
+             submitAttendance();
+         }
       }
     } catch (error) {
       console.error("Web Bluetooth Error: ", error);
