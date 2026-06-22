@@ -214,12 +214,12 @@
       const isNativeApp = window.ExodusNative || navigator.userAgent.includes('ExodusMobileApp');
       if (isNativeApp) {
         document.getElementById('bleScanBtn').style.display = 'flex';
-      } else {
-        if (navigator.bluetooth) {
-          document.getElementById('webBleScanBtn').style.display = 'flex';
-        }
-        document.getElementById('audioScanBtn').style.display = 'flex';
+      } else if (navigator.bluetooth) {
+        document.getElementById('webBleScanBtn').style.display = 'flex';
       }
+      
+      // The Audio Beacon failsafe should be available on all platforms
+      document.getElementById('audioScanBtn').style.display = 'flex';
   })();
 
   // Flutter BLE Scanner Logic
