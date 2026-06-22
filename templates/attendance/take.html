@@ -88,19 +88,30 @@
               }
             }
 
-            // Automatically start BLE broadcast when the session page is loaded
-            (function initBleBroadcast() {
-              if (window.ExodusNative) {
-                window.ExodusNative.postMessage('startBleBroadcast:{{ active_session.token }}');
-                const badge = document.getElementById('bleBroadcastBadge');
-                if (badge) badge.style.display = 'flex';
-                
-                // Also add a listener to stop broadcast when leaving the page
-                window.addEventListener('beforeunload', () => {
-                  window.ExodusNative.postMessage('stopBleBroadcast');
-                });
+            let isBleActive = false;
+            window.toggleBleBroadcast = function() {
+              if (!window.ExodusNative) {
+                  alert("BLE Broadcast is only supported in the Exodus Mobile App.");
+                  return;
               }
-            })();
+              const badge = document.getElementById('bleBroadcastBadge');
+              if (!isBleActive) {
+                window.ExodusNative.postMessage('startBleBroadcast:{{ active_session.token }}');
+                if (badge) badge.style.display = 'flex';
+                isBleActive = true;
+              } else {
+                window.ExodusNative.postMessage('stopBleBroadcast');
+                if (badge) badge.style.display = 'none';
+                isBleActive = false;
+              }
+            };
+            
+            // Add a listener to stop broadcast when leaving the page
+            window.addEventListener('beforeunload', () => {
+              if (isBleActive && window.ExodusNative) {
+                window.ExodusNative.postMessage('stopBleBroadcast');
+              }
+            });
             let audioCtx = null;
             let oscillator = null;
             window.toggleAudioBeacon = function() {
@@ -150,10 +161,16 @@
         
         <div class="mt-6 w-full text-center border-t border-gray-200 dark:border-gray-700 pt-5">
           <span class="mb-3 block text-xs font-bold uppercase tracking-wider text-gray-400" id="audioBeaconStatus">Audio Beacon: OFF</span>
-          <button id="audioBeaconBtn" type="button" onclick="toggleAudioBeacon()" class="inline-flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 transition-all hover:-translate-y-0.5 hover:bg-brand-700 active:scale-95">
-            <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-            Broadcast Audio Beacon
-          </button>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button id="audioBeaconBtn" type="button" onclick="toggleAudioBeacon()" class="inline-flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-brand-500/20 transition-all hover:-translate-y-0.5 hover:bg-brand-700 active:scale-95">
+              <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+              Broadcast Audio Beacon
+            </button>
+            <button type="button" onclick="toggleBleBroadcast()" class="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 hover:bg-blue-700 active:scale-95">
+              <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+              Toggle BLE Broadcast
+            </button>
+          </div>
         </div>
       </div>
     </div>
