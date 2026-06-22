@@ -360,7 +360,13 @@
       btnText.innerText = 'Listening for Beacon...';
       btn.classList.add('animate-pulse');
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        } 
+      });
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
@@ -371,8 +377,8 @@
       const dataArray = new Float32Array(bufferLength);
       const sampleRate = audioCtx.sampleRate;
       
-      // Calculate which bin corresponds to 19000 Hz
-      const targetFrequency = 19000;
+      // Calculate which bin corresponds to 18000 Hz
+      const targetFrequency = 18000;
       const binIndex = Math.round(targetFrequency * analyser.fftSize / sampleRate);
       
       let consecutiveHits = 0;
