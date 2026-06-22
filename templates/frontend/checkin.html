@@ -246,7 +246,7 @@
       btn.classList.add('animate-pulse');
 
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: ['0000e0d0-0000-1000-8000-00805f9b34fb'] }]
+        filters: [{ services: [0x1824] }]
       });
 
       // If the Android phone hid the beacon name due to 31-byte packet size limits,
