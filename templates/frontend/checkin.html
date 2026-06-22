@@ -275,7 +275,32 @@
       if (tokenInput) {
          tokenInput.value = detectedToken;
          if (bleVerifiedInput) bleVerifiedInput.value = isActuallyBleVerified ? 'true' : 'false';
-         submitAttendance(); // directly check and submit
+         
+         if (!isActuallyBleVerified && !currentPosition) {
+             const btnSubmitText = document.querySelector('button span.font-bold');
+             if (btnSubmitText) btnSubmitText.innerText = 'WAITING FOR GPS...';
+             
+             if (obtainingLocation) {
+                 alert('Still acquiring initial GPS location. Please ensure you have allowed location permissions before proceeding.');
+                 if (btnSubmitText) btnSubmitText.innerText = 'CHECK IN';
+             } else {
+                 navigator.geolocation.getCurrentPosition(
+                   (position) => {
+                     currentPosition = position;
+                     setFormCoordinates(position);
+                     submitAttendance();
+                   },
+                   (error) => {
+                     console.error('Geolocation Error:', error);
+                     alert('Unable to get location for GPS fallback verification. Please click Retry on the GPS signal monitor.');
+                     if (btnSubmitText) btnSubmitText.innerText = 'CHECK IN';
+                   },
+                   geolocOptions
+                 );
+             }
+         } else {
+             submitAttendance(); // directly check and submit
+         }
       }
     } catch (error) {
       console.error("Web Bluetooth Error: ", error);
