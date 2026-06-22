@@ -88,7 +88,7 @@
     </button>
 
     <div id="qr-scanner" class="mb-4 hidden">
-      <video id="video" class="h-64 w-64 rounded-xl border-2 border-brand-200 bg-white dark:bg-gray-800 shadow-inner"></video>
+      <video id="video" class="h-64 w-64 object-cover rounded-xl border-2 border-brand-200 bg-white dark:bg-gray-800 shadow-inner"></video>
       <canvas id="canvas" class="hidden"></canvas>
     </div>
   </div>
@@ -187,6 +187,12 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
+  // Show Windows Warning early to avoid any script crash hiding it
+  if (navigator.userAgent.indexOf("Windows") !== -1 && !/Mobi/i.test(navigator.userAgent)) {
+    const warning = document.getElementById('windows-warning');
+    if (warning) warning.style.display = 'block';
+  }
+
   const geolocOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
   
   // Elements
@@ -205,7 +211,8 @@
 
   // Display correct BLE button based on platform
   (function initBleButtons() {
-      if (window.ExodusNative) {
+      const isNativeApp = window.ExodusNative || navigator.userAgent.includes('ExodusMobileApp');
+      if (isNativeApp) {
         document.getElementById('bleScanBtn').style.display = 'flex';
       } else {
         if (navigator.bluetooth) {
@@ -633,12 +640,14 @@
         
         var lat = position.coords.latitude;
         var lng = position.coords.longitude;
-        map.setView([lat, lng], 17);
-        // Clear previous markers
-        map.eachLayer((layer) => {
-          if(layer instanceof L.Marker) { map.removeLayer(layer); }
-        });
-        L.marker([lat, lng]).addTo(map).bindPopup('You are here').openPopup();
+        if (typeof map !== 'undefined' && map) {
+          map.setView([lat, lng], 17);
+          // Clear previous markers
+          map.eachLayer((layer) => {
+            if(layer instanceof L.Marker) { map.removeLayer(layer); }
+          });
+          L.marker([lat, lng]).addTo(map).bindPopup('You are here').openPopup();
+        }
       },
       (error) => {
         obtainingLocation = false;
@@ -781,13 +790,18 @@
 
   // Initialize Map - center on default roughly
   var defaultLat = 5.6037, defaultLng = -0.187;
-  var map = L.map('map').setView([defaultLat, defaultLng], 17);
+  var map = null;
+  try {
+    map = L.map('map').setView([defaultLat, defaultLng], 17);
 
-  // Add OpenStreetMap Tiles
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap',
-  }).addTo(map);
+    // Add OpenStreetMap Tiles
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap',
+    }).addTo(map);
+  } catch(e) {
+    console.warn("Leaflet map could not be loaded. Adblocker or network issue.", e);
+  }
 
   // Start finding location on page load
   acquireLocation();
@@ -872,11 +886,6 @@
     }
   }, 1000);
 
-  // Show Windows Warning
-  if (navigator.userAgent.indexOf("Windows") !== -1 && !/Mobi/i.test(navigator.userAgent)) {
-    const warning = document.getElementById('windows-warning');
-    if (warning) warning.style.display = 'block';
-  }
 </script>
 
 {% endblock %}
