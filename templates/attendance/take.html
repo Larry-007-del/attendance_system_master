@@ -534,7 +534,7 @@
   <script src="{% static 'js/qrious.min.js' %}"></script>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  (function() {
     {% if active_session %}
     const token = "{{ active_session.token }}";
     const qrCanvas = document.getElementById('qr-canvas');
@@ -569,7 +569,7 @@
         window.qrIntervalId = setInterval(updateQR, 10000);
     }
     {% endif %}
-  });
+  })();
 </script>
 
 {% endblock %}
