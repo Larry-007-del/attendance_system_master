@@ -246,23 +246,22 @@
       btn.classList.add('animate-pulse');
 
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [0x1824] }]
+        acceptAllDevices: true,
+        optionalServices: [0x1824]
       });
 
-      // Since we filtered by the specific Exodus Service UUID (0x1824), 
-      // the mere fact the student could select the device proves they are in range!
-      // We no longer need to fallback to GPS even if the name is hidden.
-      let isActuallyBleVerified = true; 
+      // If the Android phone hid the beacon name due to 31-byte packet size limits,
+      // we can still verify proximity! We just need the student to provide the token manually.
       let detectedToken = "";
-
+      let isActuallyBleVerified = false;
+      
       if (device.name && device.name.startsWith('EXODUS_')) {
           detectedToken = device.name.replace('EXODUS_', '');
+          isActuallyBleVerified = true;
       } else {
-          // The Android device hid its name due to packet size limits, but we know they are close.
-          // We just need them to manually enter the 6-digit token to complete the flow.
           detectedToken = tokenInput ? tokenInput.value.trim() : "";
           if (!detectedToken || detectedToken.length < 5) {
-              const userToken = prompt("Beacon detected! However, your lecturer's Android phone hides its BLE name. Please enter the token shown on the lecturer's screen to complete the check-in:");
+              const userToken = prompt("Because your lecturer's Android phone hides its BLE name, we must verify you using GPS. Please enter the token shown on the lecturer's screen to continue:");
               if (!userToken) {
                   throw new Error("Token is required to complete check in.");
               }
@@ -270,7 +269,7 @@
           }
       }
 
-      btnText.innerText = 'Beacon Verified!';
+      btnText.innerText = isActuallyBleVerified ? 'Beacon Verified!' : 'Token Required';
       btn.classList.remove('animate-pulse');
       btn.classList.replace('bg-indigo-50', 'bg-emerald-50');
       btn.classList.replace('text-indigo-700', 'text-emerald-700');
