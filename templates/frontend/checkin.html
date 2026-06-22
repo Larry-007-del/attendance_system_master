@@ -360,13 +360,21 @@
       btnText.innerText = 'Listening for Beacon...';
       btn.classList.add('animate-pulse');
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
-        } 
-      });
+      let stream;
+      try {
+        // First try to get raw, unfiltered audio
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: { ideal: false },
+            noiseSuppression: { ideal: false },
+            autoGainControl: { ideal: false }
+          } 
+        });
+      } catch (e) {
+        console.warn("Advanced audio constraints rejected, falling back to default:", e);
+        // If the browser rejects the raw audio constraints, fallback to basic audio
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
@@ -452,7 +460,11 @@
 
     } catch (err) {
       console.error("Audio Web API Error: ", err);
-      alert("Microphone access is required to scan the Audio Beacon.");
+      if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+        alert("Microphone access is denied. Please grant microphone permissions in your browser or app settings to scan the audio beacon.");
+      } else {
+        alert("Microphone Error (" + err.name + "): " + err.message + "\n\nIf you are using the mobile app, please ensure it has the RECORD_AUDIO permission.");
+      }
       const btnText = document.getElementById('audioScanText');
       btnText.innerText = 'Microphone Denied';
       document.getElementById('audioScanBtn').classList.remove('animate-pulse');
