@@ -253,26 +253,28 @@
       // If the Android phone hid the beacon name due to 31-byte packet size limits,
       // we can still verify proximity! We just need the student to provide the token manually.
       let detectedToken = "";
+      let isActuallyBleVerified = false;
       if (device.name && device.name.startsWith('EXODUS_')) {
           detectedToken = device.name.replace('EXODUS_', '');
+          isActuallyBleVerified = true;
       } else {
           detectedToken = tokenInput ? tokenInput.value.trim() : "";
           if (!detectedToken || detectedToken.length < 5) {
-              const userToken = prompt("Proximity verified! However, your device couldn't read the beacon's name. Please enter the token shown on the lecturer's screen:");
+              const userToken = prompt("Because your lecturer's Android phone hides its BLE name, we must verify you using GPS. Please enter the token shown on the lecturer's screen to continue:");
               if (!userToken) {
                   throw new Error("Token is required to complete check in.");
               }
               detectedToken = userToken.trim();
           }
       }
-      btnText.innerText = 'Beacon Found!';
+      btnText.innerText = isActuallyBleVerified ? 'Beacon Verified!' : 'Token Required';
       btn.classList.remove('animate-pulse');
       btn.classList.replace('bg-indigo-50', 'bg-emerald-50');
       btn.classList.replace('text-indigo-700', 'text-emerald-700');
 
       if (tokenInput) {
          tokenInput.value = detectedToken;
-         if (bleVerifiedInput) bleVerifiedInput.value = 'true';
+         if (bleVerifiedInput) bleVerifiedInput.value = isActuallyBleVerified ? 'true' : 'false';
          submitAttendance(); // directly check and submit
       }
     } catch (error) {
