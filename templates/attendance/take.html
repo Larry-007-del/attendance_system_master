@@ -88,27 +88,38 @@
               }
             }
 
-            let isBleActive = false;
+            // Track BLE active state in sessionStorage so it survives HTMX navigation
             window.toggleBleBroadcast = function() {
               if (!window.ExodusNative) {
                   alert("BLE Broadcast is only supported in the Exodus Mobile App.");
                   return;
               }
               const badge = document.getElementById('bleBroadcastBadge');
+              const bleActiveKey = 'bleActive_{{ active_session.token }}';
+              let isBleActive = sessionStorage.getItem(bleActiveKey) === 'true';
+              
               if (!isBleActive) {
                 window.ExodusNative.postMessage('startBleBroadcast:{{ active_session.token }}');
                 if (badge) badge.style.display = 'flex';
-                isBleActive = true;
+                sessionStorage.setItem(bleActiveKey, 'true');
               } else {
                 window.ExodusNative.postMessage('stopBleBroadcast');
                 if (badge) badge.style.display = 'none';
-                isBleActive = false;
+                sessionStorage.setItem(bleActiveKey, 'false');
               }
             };
+
+            // Set initial UI state based on session storage
+            setTimeout(() => {
+              const badge = document.getElementById('bleBroadcastBadge');
+              if (sessionStorage.getItem('bleActive_{{ active_session.token }}') === 'true' && badge) {
+                badge.style.display = 'flex';
+              }
+            }, 100);
             
             // Add a listener to stop broadcast when leaving the page
             window.addEventListener('beforeunload', () => {
-              if (isBleActive && window.ExodusNative) {
+              if (sessionStorage.getItem('bleActive_{{ active_session.token }}') === 'true' && window.ExodusNative) {
                 window.ExodusNative.postMessage('stopBleBroadcast');
               }
             });
@@ -187,7 +198,7 @@
         </button>
       </form>
       
-      <form method="post" action="{% url 'frontend:end_attendance' %}" onsubmit="return confirm('Are you sure you want to end this attendance session?');" hx-boost="true" class="w-full sm:w-1/2">
+      <form method="post" action="{% url 'frontend:end_attendance' %}" onsubmit="if(window.ExodusNative){ window.ExodusNative.postMessage('stopBleBroadcast'); sessionStorage.setItem('bleActive_{{ active_session.token }}', 'false'); } return confirm('Are you sure you want to end this attendance session?');" hx-boost="true" class="w-full sm:w-1/2">
         {% csrf_token %}
         <input type="hidden" name="course_id" value="{{ active_session.course.id }}" />
         <button type="submit" class="flex w-full items-center justify-center rounded-xl bg-red-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5 hover:bg-red-700 active:scale-95">
@@ -530,8 +541,7 @@
   </div>
 </div>
 
-  <!-- Load QRious for client-side QR generation locally to avoid CDN blocking on mobile app -->
-  <script src="{% static 'js/qrious.min.js' %}"></script>
+
 
 <script>
   (function() {
